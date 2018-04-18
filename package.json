@@ -3,7 +3,14 @@
   "version": "0.0.0",
   "description": "Deamon that provide core functionality to open-bucket client",
   "main": "src/index.js",
+  "scripts": {
+    "test": "jest"
+  },
   "author": "open-bucket",
   "repository": "https://github.com/open-bucket/daemon",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "jest": "^22.4.3",
+    "memorystream": "^0.3.1"
+  }
 }
