@@ -3,7 +3,14 @@
   "version": "0.0.0",
   "description": "Deamon that provide core functionality to open-bucket client",
   "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-bucket/daemon.git"
+  },
   "author": "open-bucket",
-  "repository": "https://github.com/open-bucket/daemon",
-  "license": "MIT"
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/open-bucket/tracker/issues"
+  },
+  "homepage": "https://github.com/open-bucket/tracker#readme"
 }
