@@ -1,0 +1,9 @@
+{
+  "name": "daemon",
+  "version": "0.0.0",
+  "description": "Deamon that provide core functionality to open-bucket client",
+  "main": "src/index.js",
+  "author": "open-bucket",
+  "repository": "https://github.com/open-bucket/daemon",
+  "license": "MIT"
+}
