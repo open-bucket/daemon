@@ -6,11 +6,18 @@
   "scripts": {
     "test": "jest"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-bucket/daemon.git"
+  },
   "author": "open-bucket",
-  "repository": "https://github.com/open-bucket/daemon",
   "license": "MIT",
   "dependencies": {
     "jest": "^22.4.3",
     "memorystream": "^0.3.1"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/open-bucket/tracker/issues"
+  },
+  "homepage": "https://github.com/open-bucket/tracker#readme"
 }
