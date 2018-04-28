@@ -4,7 +4,7 @@
   "description": "Deamon that provide core functionality to open-bucket client",
   "main": "src/index.js",
   "scripts": {
-    "test": "jest",
+    "test": "npm run lint && jest",
     "lint": "eslint ."
   },
   "repository": {
