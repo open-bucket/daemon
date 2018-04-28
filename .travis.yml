@@ -3,3 +3,7 @@ node_js:
   - "10"
   - "9"
   - "8"
+notifications:
+  slack:
+    rooms:
+      - open-bucket:l739BZkMPWtzT1fJkorGhBNT#daemon
