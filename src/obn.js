@@ -37,9 +37,9 @@ commander
 
         function changeConfigT(name) {
             const mapper = {
-                'Wallet': WalletCLI.changeConfig,
-                'Consumer': ConsumerCLI.changeConfig,
-                'Producer': ProducerCLI.changeConfig
+                'Wallet': WalletCLI.applyConfigPromptT,
+                'Consumer': ConsumerCLI.applyConfigPromptT,
+                'Producer': ProducerCLI.applyConfigPromptT
             };
             return mapper[name]();
         }

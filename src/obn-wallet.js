@@ -10,13 +10,12 @@ const promptT = fromPromised(prompt);
 /**
  * Project imports
  */
-const {delayT, trace} = require('./core/util');
+const {delayT, logConsoleT} = require('./core/util');
 
-
-// changeConfig :: () -> Task
-function changeConfig() {
+function applyConfigPromptT() {
     console.log('---------Change Wallet Config---------');
-    return promptT([
+
+    const promptQuestions = [
         {
             type: 'input',
             name: 'secretPath',
@@ -27,17 +26,21 @@ function changeConfig() {
                 return !!value;
             },
         },
-    ]).chain(() => {
-        console.log('Applying new config...');
+    ];
 
-        // The below line of code simulates the change config process
-        // that takes about 500ms
-        // REMOVE this when we do the actual implementation
-        // TODO: do the actual implementation
-        return delayT(500).map(trace(console.log, 'Done.'));
-    });
+    return promptT(promptQuestions)
+        .chain(() => {
+            console.log('Applying new config...');
+
+            // The below line of code simulates the applying config process
+            // that takes about 500ms
+            // REMOVE this when we do the actual implementation in ./wallet/index.js
+            // TODO: do the actual implementation in ./wallet/index.js
+            return delayT(500);
+        })
+        .chain(logConsoleT('Done.'));
 }
 
 module.exports = {
-    changeConfig
+    applyConfigPromptT
 };

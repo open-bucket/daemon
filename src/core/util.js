@@ -16,12 +16,8 @@ function _trace(logFunc, msg, value) {
     return value;
 }
 
-function _logT(msg, value) {
-    if (value) {
-        console.log(msg, value);
-    } else {
-        console.log(msg);
-    }
+function _logConsoleT(msg, value) {
+    trace(console.log, msg, value);
     return of(value);
 }
 
@@ -35,12 +31,11 @@ function delayT(ms) {
 }
 
 const trace = curry(_trace);
-const logT = curry(_logT);
+const logConsoleT = curry(_logConsoleT);
 
 
 module.exports = {
-    constant,
     trace,
-    logT,
+    logConsoleT,
     delayT
 };

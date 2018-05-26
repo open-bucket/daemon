@@ -1,13 +1,21 @@
 #!/usr/bin/env node
+/**
+ * Lib imports
+ */
 const {prompt} = require('inquirer');
 const {fromPromised} = require('folktale/concurrency/task');
 
 const taskPrompt = fromPromised(prompt);
 
-// changeConfig :: () -> Task
-function changeConfig() {
+/**
+ * Project imports
+ */
+const {delayT, logConsoleT} = require('./core/util');
+
+function applyConfigPromptT() {
     console.log('---------Change Consumer Config---------');
-    return taskPrompt([
+
+    const promptQuestions = [
         {
             type: 'input',
             name: 'directory',
@@ -23,19 +31,21 @@ function changeConfig() {
             message: 'Start Open Bucket Consumer on startup?',
             default: false
         },
-    ]);
-    /*
-    {
-        directory: '/path/to/consumer/space/dir'
-        startOnStartup: false
-    }
-     */
-    // TODO: map answer to task
-    // TODO: apply the new consumer space dir
-    // TODO: make startOnStartup take effect
-    // TODO: edit ../config.json
+    ];
+
+    return taskPrompt(promptQuestions)
+        .chain(() => {
+            console.log('Applying new config...');
+
+            // The below line of code simulates the applying config process
+            // that takes about 500ms
+            // REMOVE this when we do the actual implementation in ./consumer/index.js
+            // TODO: do the actual implementation in ./consumer/index.js
+            return delayT(500);
+        })
+        .chain(logConsoleT('Done.'));
 }
 
 module.exports = {
-    changeConfig
+    applyConfigPromptT
 };
