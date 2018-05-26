@@ -30,8 +30,8 @@ const {trace} = require('./core/util');
 commander.version('0.0.1');
 
 commander
-    .command('configs')
-    .description('Apply configs to Open Bucket components')
+    .command('config')
+    .description('Apply config to Open Bucket components')
     .action(function obnConfigs() {
         console.log('---------Daemon Init---------');
 
