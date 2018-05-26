@@ -1,7 +1,8 @@
 const MemoryStream = require('memorystream');
-const {createCipher, createDecipher} = require('../../src/core/crypto');
+const { createCipher, createDecipher } = require('../../src/core/crypto');
+const { promisify } = require('util');
 
-describe('encrypt', () => {
+describe('crypto', () => {
     let stream;
     beforeEach(() => {
         stream = new MemoryStream([]);
@@ -23,18 +24,16 @@ describe('encrypt', () => {
 
     it('should create decrypted data', (done) => {
         const encrypt = createCipher('Abcd1234');
-        const decrypt = createDecipher('Abcd1234');
+        const decrypt = createDecipher('Abcd1234').setEncoding('utf8');
         const message = 'The quick brown fox jumps over the lazy dog';
 
         stream.pipe(encrypt).pipe(decrypt);
-        let data;
-        stream.on('data', (chunk) => {
-            data = chunk.toString();
-        });
-        stream.on('end', () => {
-            expect(data).toEqual(message);
+        stream.on('end',()=>{
+            decrypt.end();
+            expect(decrypt.read()).toEqual(message);
             done();
         });
         stream.end(message);
+
     }, 5000);
 });

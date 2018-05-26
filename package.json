@@ -20,8 +20,9 @@
     "debug": "^3.1.0",
     "folktale": "^2.1.0",
     "inquirer": "^5.2.0",
+    "parse-torrent": "^6.0.1",
     "ramda": "^0.25.0",
-    "webtorrent": "^0.98.24"
+    "webtorrent": "^0.100.0"
   },
   "bugs": {
     "url": "https://github.com/open-bucket/tracker/issues"
