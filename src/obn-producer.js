@@ -1,61 +1,36 @@
 #!/usr/bin/env node
+// Usage: obn producer <command>. Ex: obn producer config
 /**
  * Lib imports
  */
-const {prompt} = require('inquirer');
-const {fromPromised} = require('folktale/concurrency/task');
-
-const taskPrompt = fromPromised(prompt);
+const debug = require('debug')('obn-producer');
+const commander = require('commander');
 
 /**
  * Project imports
  */
-const {delayT, logConsoleT} = require('./core/util');
+const {applyConfigPromptT, applyConfigT} = require('./producer');
 
-function applyConfigPromptT() {
-    console.log('---------Change Producer Config---------');
+commander.command('config').description('Apply new Consumer Config')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-r, --directory <string>', 'Specify Producer space directory')
+    .option('-z, --size <string>', 'Specify size of Producer space directory')
+    .option('-s, --start-on-startup <bool>', 'Specify to start Producer on startup')
+    .action(function applyNewProducerConfig({detach, ...rest}) {
+        const applyConfigTask = detach
+            ? applyConfigT(rest)
+            : applyConfigPromptT();
+        return applyConfigTask.run().promise();
+    });
 
-    const promptQuestions = [
-        {
-            type: 'input',
-            name: 'directory',
-            message: 'Input the path to Producer Space Directory: ',
-            validate: function (value) {
-                // TODO: validate valid path
-                // returns true if valid, the message if invalid
-                return !!value;
-            },
-        },
-        {
-            type: 'input',
-            name: 'size',
-            message: 'Define the size of Producer Space Directory in `${number} ${unit})` format: ',
-            validate: function (value) {
-                // TODO: validate input format: `${NUMBER}${UNIT}`
-                // returns true if valid, the message if invalid
-                return !!value;
-            }
-        },
-        {
-            type: 'confirm',
-            name: 'startOnStartup',
-            message: 'Start Producer on startup?',
-            default: false
-        },
-    ];
+commander.command('start').description('Start Producer')
+    .action(function startProducer() {
+        // This is just an example how to add another command to obn-consumer.
+        // TODO: implement this
+        debug('startProducer is called');
+    });
 
-    return taskPrompt(promptQuestions)
-        .chain(() => {
-            console.log('Applying new config...');
-
-            // The below line of code simulates the applying config process
-            // that takes about 500ms
-            // REMOVE this when we do the actual implementation in ./producer/index.js
-            // TODO: do the actual implementation in ./producer/index.js
-            return delayT(500);
-        })
-        .chain(logConsoleT('Done.'));
-}
+commander.parse(process.argv);
 
 module.exports = {
     applyConfigPromptT
