@@ -1,4 +1,4 @@
-const crypto = require('src/core/crypto');
+const crypto = require('crypto');
 
 // Nodejs support openssl algorithm
 const CIPHER_ALGORITHM = 'aes256'; // aes256 is aes256-cbc
