@@ -1,12 +1,6 @@
 const {of, task} = require('folktale/concurrency/task');
 const {curry} = require('ramda');
 
-function constant(v) {
-    return function value() {
-        return v;
-    };
-}
-
 function _trace(logFunc, msg, value) {
     if (value) {
         logFunc(msg, value);
