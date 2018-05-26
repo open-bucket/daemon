@@ -1,8 +1,10 @@
 {
-  "name": "daemon",
+  "name": "obn",
   "version": "0.0.0",
   "description": "Deamon that provide core functionality to open-bucket client",
-  "main": "src/index.js",
+  "main": "./src/obn.js",
+  "bin": "./src/obn.js",
+  "preferGlobal": true,
   "scripts": {
     "test": "jest"
   },
@@ -13,11 +15,21 @@
   "author": "open-bucket",
   "license": "MIT",
   "dependencies": {
-    "jest": "^22.4.3",
-    "memorystream": "^0.3.1"
+    "commander": "^2.15.1",
+    "debug": "^3.1.0",
+    "folktale": "^2.1.0",
+    "inquirer": "^5.2.0",
+    "ramda": "^0.25.0",
+    "webtorrent": "^0.98.24"
   },
   "bugs": {
     "url": "https://github.com/open-bucket/tracker/issues"
   },
-  "homepage": "https://github.com/open-bucket/tracker#readme"
+  "homepage": "https://github.com/open-bucket/tracker#readme",
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-plugin-import": "^2.11.0",
+    "jest": "^22.4.3",
+    "memorystream": "^0.3.1"
+  }
 }

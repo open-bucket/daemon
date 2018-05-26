@@ -1,5 +1,5 @@
 const MemoryStream = require('memorystream');
-const { createCipher, createDecipher } = require('../../src/composer/crypto');
+const { createCipher, createDecipher } = require('../../src/core/crypto');
 
 describe('encrypt', () => {
     let stream;
