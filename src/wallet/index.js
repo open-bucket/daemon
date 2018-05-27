@@ -1,36 +1,38 @@
-// TODO: remove this
-/* eslint-disable no-unused-vars */
+/**
+ * Project imports
+ */
+const {delayT, logConsoleT} = require('../core/util');
+const {promptHeaderT} = require('../core/prompt');
 
-// NOTICE: files in directory (index.js) only contains logic. Don't put commander or inquiry here
-
-// This var is just only for dev purpose
-// REMOVE THIS & re-implement all function use this when we actually implement our Eth wallet
-let _wallet;
-
-function isWalletExists() {
-    return !!_wallet;
-}
-// receives config param
-
-// receives seed & password
-// connects to Ethereum network
-// return the Task Wallet
-// this is the async function
-function init(seed, password) {
-    return 0;
+function applyConfigT({secretFilePath}) {
+    // The code below simulates the applying config process that takes about 500ms
+    // REMOVE them when we do the actual implementation
+    // TODO: do the actual implementation
+    return logConsoleT('Applying new config to wallet...', null)
+        .chain(() => delayT(500))
+        .chain(() => logConsoleT('Done! Applied new config to Wallet: ', {secretFilePath}));
 }
 
-// initFromSecretFile derive from init
-function initFromSecretFile(path) {
-    // find config file
-    // find secretPath in config file
-    // read the secret
-    // if the secret is OK, init from its info
-    return 0;
+function applyConfigPromptT() {
+    const header = '---------Change Wallet Config---------';
+
+    const promptQuestions = [
+        {
+            type: 'input',
+            name: 'secretFilePath',
+            message: 'Input the path to your secret file',
+            validate: function (value) {
+                // TODO: validate valid path
+                // returns true if valid, the message if invalid
+                return !!value;
+            },
+        },
+    ];
+
+    return promptHeaderT(header, promptQuestions).chain(applyConfigT);
 }
 
 module.exports = {
-    isWalletExists,
-    init,
-    initFromSecretFile
+    applyConfigPromptT,
+    applyConfigT
 };

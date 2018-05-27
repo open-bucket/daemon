@@ -6,40 +6,27 @@
 const debug = require('debug')('obn');
 const commander = require('commander');
 const Task = require('folktale/concurrency/task');
-const {prompt} = require('inquirer');
-
-const promptT = Task.fromPromised(prompt);
 
 /**
  * Project imports
  */
-const WalletCLI = require('./obn-wallet');
-const ConsumerCLI = require('./obn-consumer');
-const ProducerCLI = require('./obn-producer');
+const Wallet = require('./wallet');
+const Consumer = require('./consumer');
+const Producer = require('./producer');
 const {trace} = require('./core/util');
-
-
-// init config
-// config got init each time on start command
-// e.g.
-//  - obn consumer start
-//  - obn producer start
-// consumer & producer also init wallet config
-// they use wallet internally
+const {promptHeaderT} = require('./core/prompt');
 
 commander.version('0.0.1');
 
-commander
-    .command('config')
-    .description('Apply config to Open Bucket components')
+commander.command('config').description('Apply config to Open Bucket components')
     .action(function obnConfigs() {
-        console.log('---------Daemon Init---------');
+        const header = '---------Daemon Init---------';
 
         function changeConfigT(name) {
             const mapper = {
-                'Wallet': WalletCLI.applyConfigPromptT,
-                'Consumer': ConsumerCLI.applyConfigPromptT,
-                'Producer': ProducerCLI.applyConfigPromptT
+                'Wallet': Wallet.applyConfigPromptT,
+                'Consumer': Consumer.applyConfigPromptT,
+                'Producer': Producer.applyConfigPromptT
             };
             return mapper[name]();
         }
@@ -56,7 +43,7 @@ commander
             validate: (answer) => answer.length > 1 || 'You must choose at least one component.'
         }];
 
-        return promptT(initQuestions)
+        return promptHeaderT(header, initQuestions)
             .chain(({components}) =>
                 components.reduce((previousTask, cmpName) =>
                     previousTask.chain(() => changeConfigT(cmpName)), Task.of(1)))
@@ -65,11 +52,11 @@ commander
             .promise();
     });
 
+// Sub-commands
 commander
-    .command('consumer', 'Producer functionality');
-
-commander
+    .command('wallet', 'Wallet functionality')
+    .command('consumer', 'Consumer functionality')
     .command('producer', 'Producer functionality');
 
-
 commander.parse(process.argv);
+
