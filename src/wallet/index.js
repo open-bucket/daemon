@@ -3,6 +3,7 @@
  */
 const {delayT, logConsoleT} = require('../core/util');
 const {promptHeaderT} = require('../core/prompt');
+const {readConfigFileT} = require('../core/config');
 
 function applyConfigT({secretFilePath}) {
     // The code below simulates the applying config process that takes about 500ms
@@ -16,20 +17,16 @@ function applyConfigT({secretFilePath}) {
 function applyConfigPromptT() {
     const header = '---------Change Wallet Config---------';
 
-    const promptQuestions = [
-        {
-            type: 'input',
-            name: 'secretFilePath',
-            message: 'Input the path to your secret file',
-            validate: function (value) {
-                // TODO: validate valid path
-                // returns true if valid, the message if invalid
-                return !!value;
+    return readConfigFileT()
+        .chain(({wallet}) => promptHeaderT(header, [
+            {
+                type: 'input',
+                name: 'secretFilePath',
+                message: 'Input the path to your secret file',
+                default: wallet.secretFilePath
             },
-        },
-    ];
-
-    return promptHeaderT(header, promptQuestions).chain(applyConfigT);
+        ]))
+        .chain(applyConfigT);
 }
 
 module.exports = {

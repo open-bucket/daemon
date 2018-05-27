@@ -25,7 +25,7 @@ commander.command('config').description('Apply new Consumer Config')
 
 commander.command('start').description('Start Producer')
     .action(function startProducer() {
-        // This is just an example how to add another command to obn-consumer.
+        // This is just an example how to add another command to obn-producer.
         // TODO: implement this
         debug('startProducer is called');
     });

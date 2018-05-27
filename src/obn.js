@@ -3,7 +3,6 @@
 /**
  * Lib imports
  */
-const debug = require('debug')('obn');
 const commander = require('commander');
 const Task = require('folktale/concurrency/task');
 
@@ -13,14 +12,13 @@ const Task = require('folktale/concurrency/task');
 const Wallet = require('./wallet');
 const Consumer = require('./consumer');
 const Producer = require('./producer');
-const {trace} = require('./core/util');
 const {promptHeaderT} = require('./core/prompt');
 
 commander.version('0.0.1');
 
-commander.command('config').description('Apply config to Open Bucket components')
-    .action(function obnConfigs() {
-        const header = '---------Daemon Init---------';
+commander.command('config').description('Apply new config to Open Bucket components')
+    .action(function applyNewDaemonComponentsConfig() {
+        const header = '---------Daemon Config---------';
 
         function changeConfigT(name) {
             const mapper = {
@@ -47,12 +45,11 @@ commander.command('config').description('Apply config to Open Bucket components'
             .chain(({components}) =>
                 components.reduce((previousTask, cmpName) =>
                     previousTask.chain(() => changeConfigT(cmpName)), Task.of(1)))
-            .map(trace(debug, 'answer: '))
             .run()
             .promise();
     });
 
-// Sub-commands
+// Register sub-commands
 commander
     .command('wallet', 'Wallet functionality')
     .command('consumer', 'Consumer functionality')
