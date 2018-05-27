@@ -1,30 +1,31 @@
 /**
  * Project imports
  */
-const {delayT, logConsoleT} = require('../core/util');
+const {delayT, logConsoleT, constant, filterEmptyKeys} = require('../core/util');
 const {promptHeaderT} = require('../core/prompt');
+const {writeConfigFileT} = require('../core/config');
 
 function applyConfigT({directory, startOnStartup}) {
+    const filteredConfig = filterEmptyKeys({directory, startOnStartup});
+
     // The code below simulates the applying config process that takes about 500ms
     // REMOVE them when we do the actual implementation
     // TODO: do the actual implementation
     return logConsoleT('Applying new config to Consumer...', null)
-        .chain(() => delayT(500))
-        .chain(() => logConsoleT('Done! Applied new config to Consumer: ', {directory, startOnStartup}));
+        .chain(constant(delayT(500)))
+        .chain(constant(writeConfigFileT({consumer: filteredConfig})))
+        .chain(constant(logConsoleT('Done! Applied new config to Consumer: ', filteredConfig)));
 }
 
 function applyConfigPromptT() {
     const header = '---------Change Consumer Config---------';
 
-    const promptQuestions = [
+    const questions = [
         {
             type: 'input',
             name: 'directory',
             message: 'Input the path to Consumer Space Directory',
-            validate: function (value) {
-                // TODO: validate valid path
-                return !!value;
-            },
+            default: null
         },
         {
             type: 'confirm',
@@ -34,7 +35,7 @@ function applyConfigPromptT() {
         },
     ];
 
-    return promptHeaderT(header, promptQuestions).chain(applyConfigT);
+    return promptHeaderT(header, questions).chain(applyConfigT);
 }
 
 module.exports = {

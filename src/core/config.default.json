@@ -1,0 +1,15 @@
+{
+  "wallet": {
+    "secretFilePath": "~/open-bucket/secret.json"
+  },
+  "consumer": {
+    "directory": "~/open-bucket/consumer-space",
+    "startOnStartup": false
+  },
+  "producer": {
+    "directory": "~/open-bucket/producer-space",
+    "size": "5GB",
+    "startOnStartup": false,
+    "account": null
+  }
+}
