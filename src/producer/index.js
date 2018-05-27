@@ -1,44 +1,47 @@
 /**
  * Project imports
  */
-const {delayT, logConsoleT} = require('../core/util');
+const {delayT, logConsoleT, constant, filterEmptyKeys} = require('../core/util');
 const {promptHeaderT} = require('../core/prompt');
-const {readConfigFileT} = require('../core/config');
+const {writeConfigFileT} = require('../core/config');
 
 function applyConfigT({directory, size, startOnStartup}) {
+    const filteredConfig = filterEmptyKeys({directory, size, startOnStartup});
+
     // The code below simulates the applying config process that takes about 500ms
     // REMOVE them when we do the actual implementation
     // TODO: do the actual implementation
     return logConsoleT('Applying new config to Producer...', null)
-        .chain(() => delayT(500))
-        .chain(() => logConsoleT('Done! Applied new config to Producer: ', {directory, size, startOnStartup}));
+        .chain(constant(delayT(500))) // do applying config process here
+        .chain(constant(writeConfigFileT({producer: filteredConfig})))
+        .chain(constant(logConsoleT('Done! Applied new config to Producer: ', filteredConfig)));
 }
 
 function applyConfigPromptT() {
     const header = '---------Change Producer Config---------';
 
-    return readConfigFileT()
-        .chain(({producer}) => promptHeaderT(header, [
-            {
-                type: 'input',
-                name: 'directory',
-                message: 'Input the path to Producer Space Directory: ',
-                default: producer.directory
-            },
-            {
-                type: 'input',
-                name: 'size',
-                message: 'Define the size of Producer Space Directory in `${number}${unit})` format: ',
-                default: producer.size
-            },
-            {
-                type: 'confirm',
-                name: 'startOnStartup',
-                message: 'Start Producer on startup?',
-                default: producer.startOnStartup
-            },
-        ]))
-        .chain(applyConfigT);
+    const questions = [
+        {
+            type: 'input',
+            name: 'directory',
+            message: 'Input the path to Producer Space Directory: ',
+            default: null
+        },
+        {
+            type: 'input',
+            name: 'size',
+            message: 'Define the size of Producer Space Directory in `${number}${unit})` format: ',
+            default: null
+        },
+        {
+            type: 'confirm',
+            name: 'startOnStartup',
+            message: 'Start Producer on startup?',
+            default: false
+        },
+    ];
+
+    return promptHeaderT(header, questions).chain(applyConfigT);
 }
 
 module.exports = {
