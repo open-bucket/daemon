@@ -9,10 +9,10 @@ const Task = require('folktale/concurrency/task');
 /**
  * Project imports
  */
-const Wallet = require('./wallet');
-const Consumer = require('./consumer');
-const Producer = require('./producer');
-const {promptHeaderT} = require('./core/prompt');
+const Wallet = require('../src/wallet/index');
+const Consumer = require('../src/consumer/index');
+const Producer = require('../src/producer/index');
+const {promptHeaderT} = require('../src/core/prompt');
 
 commander.version('0.0.1');
 

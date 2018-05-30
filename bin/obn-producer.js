@@ -9,7 +9,7 @@ const commander = require('commander');
 /**
  * Project imports
  */
-const {applyConfigPromptT, applyConfigT} = require('./producer');
+const {applyConfigPromptT, applyConfigT} = require('../src/producer/index');
 
 commander.command('config').description('Apply new Consumer Config')
     .option('-d, --detach', 'Disable interactive mode')

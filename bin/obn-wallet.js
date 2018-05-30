@@ -8,7 +8,7 @@ const commander = require('commander');
 /**
  * Project imports
  */
-const {applyConfigPromptT, applyConfigT} = require('./wallet');
+const {applyConfigPromptT, applyConfigT} = require('../src/wallet/index');
 
 commander.command('config').description('Apply new Wallet Config')
     .option('-d, --detach', 'Disable interactive mode')

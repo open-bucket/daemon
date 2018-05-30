@@ -9,13 +9,14 @@ const commander = require('commander');
 /**
  * Project imports
  */
-const {applyConfigPromptT, applyConfigT} = require('./consumer');
+const {applyConfigPromptT, applyConfigT} = require('../src/consumer/index');
 
 commander.command('config').description('Apply new Consumer Config')
     .option('-d, --detach', 'Disable interactive mode')
     .option('-r, --directory <string>', 'Specify Consumer space')
     .option('-s, --start-on-startup <bool>', 'Specify to start Consumer on startup')
     .action(function applyNewConsumerConfig({detach, ...rest}) {
+        // TODO: user must start the consumer first to config it
         const applyConfigTask = detach
             ? applyConfigT(rest)
             : applyConfigPromptT();

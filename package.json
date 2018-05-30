@@ -2,8 +2,8 @@
   "name": "obn",
   "version": "0.0.0",
   "description": "Deamon that provide core functionality to open-bucket client",
-  "main": "./src/obn.js",
-  "bin": "./src/obn.js",
+  "main": "index.js",
+  "bin": "bin/obn.js",
   "preferGlobal": true,
   "scripts": {
     "test": "npm run lint && jest",
@@ -16,7 +16,9 @@
   "author": "open-bucket",
   "license": "MIT",
   "dependencies": {
+    "chokidar": "^2.0.3",
     "commander": "^2.15.1",
+    "daemon": "git+https://github.com/vunguyenhung/daemon.node.git",
     "debug": "^3.1.0",
     "folktale": "^2.1.0",
     "inquirer": "^5.2.0",
