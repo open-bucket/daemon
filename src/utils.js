@@ -1,7 +1,11 @@
 /**
+ * Project imports
+ */
+const BPromise = require('bluebird');
+
+/**
  * Lib imports
  */
-const {of, task} = require('folktale/concurrency/task');
 const {curry} = require('ramda');
 const debug = require('debug');
 
@@ -14,23 +18,12 @@ function _trace(logFunc, msg, value) {
     return value;
 }
 
-function _traceDebug(namespace, msg, value) {
-    trace(debug(namespace), msg, value);
-    return value;
+function _createDebugLogger(namespace, msg, value) {
+    return trace(debug(`obn-daemon:${namespace}`), msg, value);
 }
 
-function _logConsoleT(msg, value) {
-    trace(console.log, msg, value);
-    return of(value);
-}
-
-function delayT(ms) {
-    return task(resolver => {
-        const timerId = setTimeout(() => resolver.resolve(), ms);
-        resolver.cleanup(() => {
-            clearTimeout(timerId);
-        });
-    });
+function _logConsoleP(msg, value) {
+    return BPromise.resolve(trace(console.log, msg, value));
 }
 
 function constant(v) {
@@ -48,14 +41,13 @@ function filterEmptyKeys(obj) {
 }
 
 const trace = curry(_trace);
-const traceDebug = curry(_traceDebug);
-const logConsoleT = curry(_logConsoleT);
+const createDebugLogger = curry(_createDebugLogger);
+const logConsoleP = curry(_logConsoleP);
 
 module.exports = {
     trace,
-    traceDebug,
-    logConsoleT,
-    delayT,
+    createDebugLogger,
+    logConsoleP,
     constant,
     filterEmptyKeys
 };

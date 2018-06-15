@@ -1,9 +1,9 @@
 /**
  * Project imports
  */
-const {delayT, logConsoleT, constant, filterEmptyKeys} = require('../core/util');
-const {promptHeaderT} = require('../core/prompt');
-const {writeConfigFileT} = require('../core/config');
+const {delayT, logConsoleP, constant, filterEmptyKeys} = require('../utils');
+const {promptHeaderP} = require('../core/prompt');
+const {writeDaemonConfigP} = require('../config-manager');
 
 function applyConfigT({secretFilePath}) {
     const filteredConfig = filterEmptyKeys({secretFilePath});
@@ -11,10 +11,10 @@ function applyConfigT({secretFilePath}) {
     // The code below simulates the applying config process that takes about 500ms
     // REMOVE them when we do the actual implementation
     // TODO: do the actual implementation
-    return logConsoleT('Applying new config to wallet...', null)
+    return logConsoleP('Applying new config to wallet...', null)
         .chain(constant(delayT(500))) // do applying config process here
-        .chain(constant(writeConfigFileT({wallet: filteredConfig})))
-        .chain(constant(logConsoleT('Done! Applied new config to Wallet: ', filteredConfig)));
+        .chain(constant(writeDaemonConfigP({wallet: filteredConfig})))
+        .chain(constant(logConsoleP('Done! Applied new config to Wallet: ', filteredConfig)));
 }
 
 function applyConfigPromptT() {
@@ -29,7 +29,7 @@ function applyConfigPromptT() {
         },
     ];
 
-    return promptHeaderT(header, questions).chain(applyConfigT);
+    return promptHeaderP(header, questions).chain(applyConfigT);
 }
 
 module.exports = {

@@ -1,4 +1,6 @@
 {
+  "authToken": "",
+  "trackerURL": "http://localhost:30000",
   "wallet": {
     "secretFilePath": "~/open-bucket/secret.json"
   },
