@@ -1,44 +1,50 @@
 /**
  * Project imports
  */
-const {delayT, logConsoleT, constant, filterEmptyKeys} = require('../core/util');
-const {promptHeaderT} = require('../core/prompt');
-const {writeConfigFileT} = require('../core/config');
+const {promptHeaderP} = require('../core/prompt');
+const CM = require('../config-manager');
+const SM = require('../space-manager');
+const api = require('../core/api');
 
-function applyConfigT({directory, startOnStartup}) {
-    const filteredConfig = filterEmptyKeys({directory, startOnStartup});
+// IMPORTANT:
+// We don't handle errors here since they will not be propagated to CLI or Client.
+// CLI or Client needs to handle errors on their own.
 
-    // The code below simulates the applying config process that takes about 500ms
-    // REMOVE them when we do the actual implementation
-    // TODO: do the actual implementation
-    return logConsoleT('Applying new config to Consumer...', null)
-        .chain(constant(delayT(500)))
-        .chain(constant(writeConfigFileT({consumer: filteredConfig})))
-        .chain(constant(logConsoleT('Done! Applied new config to Consumer: ', filteredConfig)));
+function getConsumersP() {
+    return api.get({url: '/consumers', token: CM.configs.authToken});
 }
 
-function applyConfigPromptT() {
-    const header = '---------Change Consumer Config---------';
+async function createConsumerP({address}) {
+    const newConsumerInfo = await api.post({url: '/consumers', body: {address}, token: CM.configs.authToken});
+    const {id, key} = newConsumerInfo;
+    console.log('Your new consumer key:', key);
+    console.log('Please secure your consumer key since you will need it for further interactions with this consumer');
+
+    const consumerSpace = await SM.makeConsumerSpace(id);
+    console.log('Created new consumer space at:', consumerSpace);
+
+    const consumerConfigFilePath = await CM.writeConsumerConfigFileP(id, {id, key, consumerSpace});
+    console.log('Created new consumer config at:', consumerConfigFilePath);
+
+    return newConsumerInfo;
+}
+
+function createConsumerPromptP() {
+    const header = '---------Create new consumer---------';
 
     const questions = [
         {
             type: 'input',
-            name: 'directory',
-            message: 'Input the path to Consumer Space Directory',
-            default: null
-        },
-        {
-            type: 'confirm',
-            name: 'startOnStartup',
-            message: 'Start Open Bucket Consumer on startup?',
-            default: false
-        },
+            name: 'address',
+            message: 'Input your Ethereum address'
+        }
     ];
 
-    return promptHeaderT(header, questions).chain(applyConfigT);
+    return promptHeaderP(header, questions).then(createConsumerP);
 }
 
 module.exports = {
-    applyConfigPromptT,
-    applyConfigT
+    createConsumerPromptP,
+    createConsumerP,
+    getConsumersP
 };

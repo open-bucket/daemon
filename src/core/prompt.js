@@ -2,23 +2,19 @@
  * Lib imports
  */
 const {prompt} = require('inquirer');
-const {fromPromised} = require('folktale/concurrency/task');
 const {curry} = require('ramda');
 
 /**
  * Project imports
  */
-const {logConsoleT} = require('./util');
+const {logConsoleP} = require('../utils');
 
-const promptT = fromPromised(prompt);
-
-function _promptHeaderT(header, ...params) {
-    return logConsoleT(header, null).chain(() => promptT(...params));
+function _promptHeaderP(header, ...params) {
+    return logConsoleP(header, null).then(() => prompt(...params));
 }
 
-const promptHeaderT = curry(_promptHeaderT);
+const promptHeaderP = curry(_promptHeaderP);
 
 module.exports = {
-    promptT,
-    promptHeaderT
+    promptHeaderP
 };

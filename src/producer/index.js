@@ -1,9 +1,9 @@
 /**
  * Project imports
  */
-const {delayT, logConsoleT, constant, filterEmptyKeys} = require('../core/util');
-const {promptHeaderT} = require('../core/prompt');
-const {writeConfigFileT} = require('../core/config');
+const {delayT, logConsoleP, constant, filterEmptyKeys} = require('../utils');
+const {promptHeaderP} = require('../core/prompt');
+const {writeDaemonConfigP} = require('../config-manager');
 
 function applyConfigT({directory, size, startOnStartup}) {
     const filteredConfig = filterEmptyKeys({directory, size, startOnStartup});
@@ -11,10 +11,10 @@ function applyConfigT({directory, size, startOnStartup}) {
     // The code below simulates the applying config process that takes about 500ms
     // REMOVE them when we do the actual implementation
     // TODO: do the actual implementation
-    return logConsoleT('Applying new config to Producer...', null)
+    return logConsoleP('Applying new config to Producer...', null)
         .chain(constant(delayT(500))) // do applying config process here
-        .chain(constant(writeConfigFileT({producer: filteredConfig})))
-        .chain(constant(logConsoleT('Done! Applied new config to Producer: ', filteredConfig)));
+        .chain(constant(writeDaemonConfigP({producer: filteredConfig})))
+        .chain(constant(logConsoleP('Done! Applied new config to Producer: ', filteredConfig)));
 }
 
 function applyConfigPromptT() {
@@ -41,7 +41,7 @@ function applyConfigPromptT() {
         },
     ];
 
-    return promptHeaderT(header, questions).chain(applyConfigT);
+    return promptHeaderP(header, questions).chain(applyConfigT);
 }
 
 module.exports = {

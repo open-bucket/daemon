@@ -3,35 +3,32 @@
 /**
  * Lib imports
  */
-const debug = require('debug')('obn-consumer');
 const commander = require('commander');
 
 /**
  * Project imports
  */
-const {applyConfigPromptT, applyConfigT} = require('../src/consumer/index');
+const {getConsumersP, createConsumerP, createConsumerPromptP} = require('../src/consumer');
+const {logConsoleP} = require('../src/utils');
 
-commander.command('config').description('Apply new Consumer Config')
+commander.command('create').description('Create new Consumer with specified configs')
     .option('-d, --detach', 'Disable interactive mode')
-    .option('-r, --directory <string>', 'Specify Consumer space')
-    .option('-s, --start-on-startup <bool>', 'Specify to start Consumer on startup')
-    .action(function applyNewConsumerConfig({detach, ...rest}) {
-        // TODO: user must start the consumer first to config it
-        const applyConfigTask = detach
-            ? applyConfigT(rest)
-            : applyConfigPromptT();
-        return applyConfigTask.run().promise();
+    .option('-a, --address <address>', 'Specify user Eth address (required)')
+    .option('-r, --directory <consumerPath>', 'Specify Consumer space')
+    .action(({detach, address, directory}) => {
+        const action = detach
+            ? createConsumerP({address, directory})
+            : createConsumerPromptP();
+        return action.catch(logConsoleP('Create Consumer error:\n'));
     });
 
-commander.command('start').description('Start Consumer')
+commander.command('ls').description('List all consumers')
     .action(function startConsumer() {
-        // This is just an example how to add another command to obn-consumer.
-        // TODO: implement this
-        debug('startConsumer is called');
+        return getConsumersP()
+            .then(logConsoleP('Consumers:\n'))
+            .catch(logConsoleP('Get Consumers error:\n'));
     });
 
 commander.parse(process.argv);
 
-module.exports = {
-    applyConfigPromptT
-};
+module.exports = {};

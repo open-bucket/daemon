@@ -4,49 +4,59 @@
  * Lib imports
  */
 const commander = require('commander');
-const Task = require('folktale/concurrency/task');
 
 /**
  * Project imports
  */
-const Wallet = require('../src/wallet/index');
-const Consumer = require('../src/consumer/index');
-const Producer = require('../src/producer/index');
-const {promptHeaderT} = require('../src/core/prompt');
+const {promptHeaderP} = require('../src/core/prompt');
+const {loginP, registerP} = require('../src/core/auth');
+const {createDebugLogger, logConsoleP} = require('../src/utils');
+
+// eslint-disable-next-line no-unused-vars
+const log = createDebugLogger('bin:obn');
 
 commander.version('0.0.1');
 
-commander.command('config').description('Apply new config to Open Bucket components')
-    .action(function applyNewDaemonComponentsConfig() {
-        const header = '---------Daemon Config---------';
-
-        function changeConfigT(name) {
-            const mapper = {
-                'Wallet': Wallet.applyConfigPromptT,
-                'Consumer': Consumer.applyConfigPromptT,
-                'Producer': Producer.applyConfigPromptT
-            };
-            return mapper[name]();
-        }
+commander.command('login').description('Login to OBN Tracker')
+    .action(function login() {
+        const header = '---------Login---------';
 
         const initQuestions = [{
-            type: 'checkbox',
-            message: 'Select components to init',
-            name: 'components',
-            choices: [
-                {name: 'Wallet', checked: true},
-                {name: 'Consumer', checked: true},
-                {name: 'Producer'},
-            ],
-            validate: (answer) => answer.length > 1 || 'You must choose at least one component.'
+            type: 'input',
+            name: 'username',
+            message: 'Username'
+        }, {
+            type: 'password',
+            name: 'password',
+            mask: '*',
+            message: 'Password'
         }];
 
-        return promptHeaderT(header, initQuestions)
-            .chain(({components}) =>
-                components.reduce((previousTask, cmpName) =>
-                    previousTask.chain(() => changeConfigT(cmpName)), Task.of(1)))
-            .run()
-            .promise();
+        return promptHeaderP(header, initQuestions)
+            .then(loginP)
+            .then(() => logConsoleP('Login successfully', null))
+            .catch(logConsoleP('Login error:\n'));
+    });
+
+commander.command('register').description('Register an account on OBN Tracker')
+    .action(function login() {
+        const header = '---------Register---------';
+
+        const initQuestions = [{
+            type: 'input',
+            name: 'username',
+            message: 'Username'
+        }, {
+            type: 'password',
+            name: 'password',
+            mask: '*',
+            message: 'Password'
+        }];
+
+        return promptHeaderP(header, initQuestions)
+            .then(registerP)
+            .then(() => logConsoleP('Register successfully', null))
+            .catch(logConsoleP('Register error:\n'));
     });
 
 // Register sub-commands
