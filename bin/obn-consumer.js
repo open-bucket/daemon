@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Usage: obn consumer <command>. Ex: obn consumer config
+
 /**
  * Lib imports
  */
