@@ -1,4 +1,9 @@
 /**
+ * Lib imports
+ */
+const uuid = require('uuid/v4');
+
+/**
  * Project imports
  */
 const {promptHeaderP} = require('../core/prompt');
@@ -16,9 +21,10 @@ function getConsumersP() {
 
 async function createConsumerP({address}) {
     const newConsumerInfo = await api.post({url: '/consumers', body: {address}, token: CM.configs.authToken});
-    const {id, key} = newConsumerInfo;
-    console.log('Your new consumer key:', key);
-    console.log('Please secure your consumer key since you will need it for further interactions with this consumer');
+    const {id} = newConsumerInfo;
+    const key = uuid();
+    console.log('Generated a new consumer key:', key);
+    console.log('OBN Daemon will use this consumer key to encrypt data, please save this key in a secure place');
 
     const consumerSpace = await SM.makeConsumerSpace(id);
     console.log('Created new consumer space at:', consumerSpace);
