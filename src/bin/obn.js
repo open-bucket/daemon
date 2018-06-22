@@ -8,9 +8,9 @@ const commander = require('commander');
 /**
  * Project imports
  */
-const {promptHeaderP} = require('../src/core/prompt');
-const {loginP, registerP} = require('../src/core/auth');
-const {createDebugLogger, logConsoleP} = require('../src/utils');
+const {promptHeaderP} = require('../core/prompt');
+const {loginP, registerP} = require('../core/auth');
+const {createDebugLogger, logConsoleP} = require('../utils');
 
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('bin:obn');
