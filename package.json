@@ -2,13 +2,14 @@
   "name": "obn",
   "version": "0.0.0",
   "description": "Deamon that provide core functionality to open-bucket client",
-  "main": "index.js",
-  "bin": "bin/obn.js",
+  "main": "./dist/obn.js",
+  "bin": "./dist/obn.js",
   "preferGlobal": true,
   "scripts": {
     "postinstall": "node post_install.js",
     "test": "npm run lint && jest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "build": "babel src -d dist"
   },
   "repository": {
     "type": "git",
@@ -36,7 +37,9 @@
   },
   "homepage": "https://github.com/open-bucket/tracker#readme",
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-eslint": "^8.2.3",
+    "babel-preset-env": "^1.7.0",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.11.0",
