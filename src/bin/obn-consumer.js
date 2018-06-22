@@ -8,8 +8,8 @@ const commander = require('commander');
 /**
  * Project imports
  */
-const {getConsumersP, createConsumerP, createConsumerPromptP} = require('../src/consumer');
-const {logConsoleP} = require('../src/utils');
+const {getConsumersP, createConsumerP, createConsumerPromptP} = require('../consumer');
+const {logConsoleP} = require('../utils');
 
 commander.command('create').description('Create new Consumer with specified configs')
     .option('-d, --detach', 'Disable interactive mode')
