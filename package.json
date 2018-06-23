@@ -12,7 +12,9 @@
     "prepublish": "npm run build",
     "postinstall": "node ./post_install.js",
     "test": "npm run lint && jest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "watch": "babel src -d dist -w",
+    "cli": "chmod +x ./dist/bin/* && ./dist/bin/obn.js"
   },
   "repository": {
     "type": "git",
