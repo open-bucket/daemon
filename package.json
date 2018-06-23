@@ -1,12 +1,16 @@
 {
-  "name": "obn",
-  "version": "0.0.0",
-  "description": "Deamon that provide core functionality to open-bucket client",
-  "main": "index.js",
-  "bin": "bin/obn.js",
+  "name": "@open-bucket/daemon",
+  "version": "0.0.5",
+  "description": "The Deamon provides core functionality to Open Bucket network",
+  "main": "./dist/index.js",
+  "bin": {
+    "obn": "./dist/bin/obn.js"
+  },
   "preferGlobal": true,
   "scripts": {
-    "postinstall": "node post_install.js",
+    "build": "babel src -d dist",
+    "prepublish": "npm run build",
+    "postinstall": "node ./post_install.js",
     "test": "npm run lint && jest",
     "lint": "eslint ."
   },
@@ -14,6 +18,10 @@
     "type": "git",
     "url": "git+https://github.com/open-bucket/daemon.git"
   },
+  "bugs": {
+    "url": "https://github.com/open-bucket/tracker/issues"
+  },
+  "homepage": "https://github.com/open-bucket/tracker#readme",
   "author": "open-bucket",
   "license": "MIT",
   "dependencies": {
@@ -21,7 +29,6 @@
     "bluebird": "^3.5.1",
     "chokidar": "^2.0.3",
     "commander": "^2.15.1",
-    "daemon": "git+https://github.com/vunguyenhung/daemon.node.git",
     "debug": "^3.1.0",
     "folktale": "^2.1.0",
     "form-data": "^2.3.2",
@@ -33,12 +40,11 @@
     "uuid": "^3.2.1",
     "webtorrent": "^0.100.0"
   },
-  "bugs": {
-    "url": "https://github.com/open-bucket/tracker/issues"
-  },
-  "homepage": "https://github.com/open-bucket/tracker#readme",
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-eslint": "^8.2.3",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.11.0",

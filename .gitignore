@@ -27,4 +27,5 @@ node_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-temp
+# Temp folder
+temp/
