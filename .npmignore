@@ -1,0 +1,13 @@
+# Hide src
+src
+
+# Lock files
+yarn.lock
+package-lock.json
+
+# IDE
+.idea
+.vscode
+
+# Temp
+temp
