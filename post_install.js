@@ -9,8 +9,8 @@ const path = require('path');
 /**
  * Project imports
  */
-const {logConsoleP} = require('./utils');
-const {CONFIGS_PATH, DAEMON_DEFAULT_CONFIG} = require('./constants');
+const {logConsoleP} = require('./src/utils');
+const {CONFIGS_PATH, DAEMON_DEFAULT_CONFIG} = require('./src/constants');
 
 const DAEMON_CONFIG_PATH = path.join(CONFIGS_PATH, 'daemon.json');
 
