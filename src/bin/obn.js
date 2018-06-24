@@ -35,7 +35,7 @@ commander.command('login').description('Login to OBN Tracker')
         return promptHeaderP(header, initQuestions)
             .then(loginP)
             .then(() => logConsoleP('Login successfully', null))
-            .catch(logConsoleP('Login error:\n'));
+            .catch(({data}) => logConsoleP('Login error:\n', data));
     });
 
 commander.command('register').description('Register an account on OBN Tracker')
@@ -56,7 +56,7 @@ commander.command('register').description('Register an account on OBN Tracker')
         return promptHeaderP(header, initQuestions)
             .then(registerP)
             .then(() => logConsoleP('Register successfully', null))
-            .catch(logConsoleP('Register error:\n'));
+            .catch(({data}) => logConsoleP('Register error:\n', data));
     });
 
 // Register sub-commands

@@ -1,7 +1,7 @@
 /**
  * Lib imports
  */
-const {readFileSync, writeFile, writeFileSync} = require('fs');
+const {readFile, readFileSync, writeFile, writeFileSync} = require('fs');
 const BPromise = require('bluebird');
 const {mergeDeepLeft} = require('ramda');
 const {join} = require('path');
@@ -11,12 +11,13 @@ const shell = require('shelljs');
  * Project imports
  */
 const {createDebugLogger, filterEmptyKeys, constant} = require('./utils');
-const {CONFIGS_PATH, DAEMON_DEFAULT_CONFIG} = require('./constants');
+const {OBN_CONFIGS_PATH, DAEMON_DEFAULT_CONFIG} = require('./constants');
 
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('config-manager');
 
 const writeFileP = BPromise.promisify(writeFile);
+const readFileP = BPromise.promisify(readFile);
 
 class ConfigManager {
     constructor() {
@@ -28,36 +29,45 @@ class ConfigManager {
         return ConfigManager.instance;
     }
 
-    writeConfigFileP(path, newConfig) {
-        const configPath = `${join(CONFIGS_PATH, path)}.json`;
+    writeOBNConfigFileP(path, newConfig) {
+        const configPath = `${join(OBN_CONFIGS_PATH, path)}.json`;
         const configContent = JSON.stringify(newConfig);
         return writeFileP(configPath, configContent)
             .then(constant(configPath));
     }
 
-    writeConsumerConfigFileP(id, newConfig) {
-        return this.writeConfigFileP(`consumer-${id}`, newConfig);
+    writeConsumerConfigFileP(consumerId, newConfig) {
+        return this.writeOBNConfigFileP(`consumer-${consumerId}`, newConfig);
+    }
+
+    writeDaemonConfigP(newConfig) {
+        const mergedConfigs = mergeDeepLeft(filterEmptyKeys(newConfig), this._configs);
+        this._configs = mergedConfigs;
+        return this.writeOBNConfigFileP('daemon', mergedConfigs);
     }
 
     readDaemonConfigFile() {
-        const daemonConfigPath = join(CONFIGS_PATH, 'daemon.json');
+        const daemonConfigPath = join(OBN_CONFIGS_PATH, 'daemon.json');
         try {
             return readFileSync(daemonConfigPath);
         }
         catch ({message}) {
             console.log('Failed to read Daemon config file: ', message);
-            
-            shell.mkdir('-p', CONFIGS_PATH);
+
+            shell.mkdir('-p', OBN_CONFIGS_PATH);
             writeFileSync(daemonConfigPath, JSON.stringify(DAEMON_DEFAULT_CONFIG));
             console.log('Created default Daemon config file at:', daemonConfigPath);
             return JSON.stringify(DAEMON_DEFAULT_CONFIG);
         }
     }
 
-    writeDaemonConfigP(newConfig) {
-        const mergedConfigs = mergeDeepLeft(filterEmptyKeys(newConfig), this._configs);
-        this._configs = mergedConfigs;
-        return this.writeConfigFileP('daemon', mergedConfigs);
+    readOBNConfigFileP(path) {
+        const configPath = `${join(OBN_CONFIGS_PATH, path)}.json`;
+        return readFileP(configPath).then(JSON.parse);
+    }
+
+    readConsumerConfigFileP(consumerId) {
+        return this.readOBNConfigFileP(`consumer-${consumerId}`);
     }
 
     get configs() {

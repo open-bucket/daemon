@@ -1,5 +1,5 @@
-# Build
-dist/
+# BUILD
+dist
 
 # IDE
 .idea/

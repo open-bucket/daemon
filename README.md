@@ -4,6 +4,7 @@
 - Register: `obn register`
 
 ## Development
+- Enable Debug logs: `export DEBUG=*`
 - Install npm packages: `npm i`
-- Create symlink from `obn.js` to `/usr/local/bin/`: `npm link`
-- Enable Debug logs: `DEBUG=* obn config`
+- Build & Watch for changes: `npm run watch`
+- Run CLI using: `npm run -- <command>`

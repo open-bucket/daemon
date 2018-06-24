@@ -19,14 +19,14 @@ commander.command('create').description('Create new Consumer with specified conf
         const action = detach
             ? createConsumerP({address, directory})
             : createConsumerPromptP();
-        return action.catch(logConsoleP('Create Consumer error:\n'));
+        return action.catch(({data}) => logConsoleP('Create Consumer error:\n', data));
     });
 
 commander.command('ls').description('List all consumers')
     .action(function startConsumer() {
         return getConsumersP()
             .then(logConsoleP('Consumers:\n'))
-            .catch(logConsoleP('Get Consumers error:\n'));
+            .catch(({data}) => logConsoleP('Get Consumers error:\n', data));
     });
 
 commander.parse(process.argv);

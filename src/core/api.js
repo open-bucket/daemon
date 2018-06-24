@@ -3,7 +3,7 @@
  */
 const axios = require('axios');
 const BPromise = require('bluebird');
-const {path} = require('ramda');
+const {pick} = require('ramda');
 
 /**
  * Project imports
@@ -28,7 +28,7 @@ function send({url, method = 'GET', headers = {}, token, body}) {
 
     return axios.request(configs)
         .then(({data}) => data)
-        .catch(error => BPromise.reject(path(['response', 'data'], error)));
+        .catch(({response}) => BPromise.reject(pick(['data', 'status', 'statusText', 'headers'], response)));
 }
 
 function post(params) {
