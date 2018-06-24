@@ -1,6 +1,6 @@
 {
   "name": "@open-bucket/daemon",
-  "version": "0.0.5",
+  "version": "0.0.8",
   "description": "The Deamon provides core functionality to Open Bucket network",
   "main": "./dist/index.js",
   "bin": {
@@ -10,7 +10,6 @@
   "scripts": {
     "build": "babel src -d dist",
     "prepublish": "npm run build",
-    "postinstall": "node ./post_install.js",
     "test": "npm run lint && jest",
     "lint": "eslint ."
   },
