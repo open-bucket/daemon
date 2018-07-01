@@ -16,5 +16,6 @@ function _promptHeaderP(header, ...params) {
 const promptHeaderP = curry(_promptHeaderP);
 
 module.exports = {
-    promptHeaderP
+    promptHeaderP,
+    prompt
 };
