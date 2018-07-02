@@ -4,6 +4,7 @@
 const CM = require('../config-manager');
 const SM = require('../space-manager');
 const api = require('../core/api');
+const ContractService = require('@open-bucket/contracts');
 
 function getProducersP() {
     return api.get({url: '/producers', token: CM.configs.authToken});
@@ -29,8 +30,12 @@ async function createProducerP({spacePath, spaceLimit, name}) {
     return producerInfo;
 }
 
+function createProducerActivationP({producerId, accountIndex}) {
+    return ContractService.createProducerActivationP({producerId, accountIndex});
+}
 
 module.exports = {
     createProducerP,
-    getProducersP
+    getProducersP,
+    createProducerActivationP
 };

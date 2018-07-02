@@ -37,12 +37,12 @@ async function createConsumerP({tier, name}) {
     return consumerInfo;
 }
 
-function createActivationP({consumerId, accountIndex, value}) {
-    return ContractService.createActivationP({consumerId, accountIndex, value});
+function createConsumerActivationP({consumerId, accountIndex, value}) {
+    return ContractService.createConsumerActivationP({consumerId, accountIndex, value});
 }
 
 module.exports = {
     createConsumerP,
     getConsumersP,
-    createActivationP
+    createConsumerActivationP
 };
