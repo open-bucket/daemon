@@ -1,50 +1,36 @@
 /**
  * Project imports
  */
-const {delayT, logConsoleP, constant, filterEmptyKeys} = require('../utils');
-const {promptHeaderP} = require('../core/prompt');
-const {writeDaemonConfigP} = require('../config-manager');
+const CM = require('../config-manager');
+const SM = require('../space-manager');
+const api = require('../core/api');
 
-function applyConfigT({directory, size, startOnStartup}) {
-    const filteredConfig = filterEmptyKeys({directory, size, startOnStartup});
-
-    // The code below simulates the applying config process that takes about 500ms
-    // REMOVE them when we do the actual implementation
-    // TODO: do the actual implementation
-    return logConsoleP('Applying new config to Producer...', null)
-        .chain(constant(delayT(500))) // do applying config process here
-        .chain(constant(writeDaemonConfigP({producer: filteredConfig})))
-        .chain(constant(logConsoleP('Done! Applied new config to Producer: ', filteredConfig)));
+function getProducersP() {
+    return api.get({url: '/producers', token: CM.configs.authToken});
 }
 
-function applyConfigPromptT() {
-    const header = '---------Change Producer Config---------';
+async function createProducerP({spacePath, spaceLimit, name}) {
+    function printNewProducerInfo({space, config}) {
+        console.log('Created new producer space at:', space);
+        console.log('Created new producer config at:', config);
+    }
 
-    const questions = [
-        {
-            type: 'input',
-            name: 'directory',
-            message: 'Input the path to Producer Space Directory: ',
-            default: null
-        },
-        {
-            type: 'input',
-            name: 'size',
-            message: 'Define the size of Producer Space Directory in `${number}${unit})` format: ',
-            default: null
-        },
-        {
-            type: 'confirm',
-            name: 'startOnStartup',
-            message: 'Start Producer on startup?',
-            default: false
-        },
-    ];
+    const producerInfo = await api.post({
+        url: '/producers',
+        body: {spacePath, spaceLimit, name},
+        token: CM.configs.authToken
+    });
 
-    return promptHeaderP(header, questions).chain(applyConfigT);
+    const space = await SM.makeProducerSpace({producerId: producerInfo.id, spacePath});
+    const config = await CM.writeProducerConfigFileP(producerInfo.id, {id: producerInfo.id, space, spaceLimit});
+
+    printNewProducerInfo({space, config});
+
+    return producerInfo;
 }
+
 
 module.exports = {
-    applyConfigPromptT,
-    applyConfigT
+    createProducerP,
+    getProducersP
 };

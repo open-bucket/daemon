@@ -113,13 +113,15 @@ async function createActivationPromptP() {
     });
 }
 
+// Detach Usage:
+// obn consumer create -d -n MyConsumer -t BASIC
 commander.command('create').description('Create new Consumer with specified configs')
     .option('-d, --detach', 'Disable interactive mode')
-    .option('-a, --address <address>', 'Specify user Eth address (required)')
-    .option('-r, --directory <consumerPath>', 'Specify Consumer space')
-    .action(({detach, address, directory}) => {
+    .option('-n, --name <string>', 'Specify Consumer name')
+    .option('-t, --tier <string>', 'Specify Consumer tier')
+    .action(({detach, name, tier}) => {
         const action = detach
-            ? createConsumerP({address, directory})
+            ? createConsumerP({name, tier})
             : createConsumerPromptP();
         return action.catch(({data}) => logConsoleP('Create Consumer error:\n', data));
     });
@@ -139,5 +141,3 @@ commander.command('activate').description('Activate a Consumer')
     });
 
 commander.parse(process.argv);
-
-module.exports = {};

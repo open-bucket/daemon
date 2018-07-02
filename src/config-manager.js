@@ -40,6 +40,10 @@ class ConfigManager {
         return this.writeOBNConfigFileP(`consumer-${consumerId}`, newConfig);
     }
 
+    writeProducerConfigFileP(producerId, newConfig) {
+        return this.writeOBNConfigFileP(`producer-${producerId}`, newConfig);
+    }
+
     writeDaemonConfigP(newConfig) {
         const mergedConfigs = mergeDeepLeft(filterEmptyKeys(newConfig), this._configs);
         this._configs = mergedConfigs;
