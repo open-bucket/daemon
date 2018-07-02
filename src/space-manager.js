@@ -25,6 +25,12 @@ class SpaceManager {
         const consumerSpaceDirPath = join(OBN_SPACES_PATH, `consumer-${consumerId}`);
         return mkdirP(consumerSpaceDirPath).then(constant(consumerSpaceDirPath));
     }
+
+    makeProducerSpace({spacePath, producerId}) {
+        const path = spacePath || OBN_SPACES_PATH;
+        const producerSpacePath = join(path, `producer-${producerId}`);
+        return mkdirP(producerSpacePath).then(constant(producerSpacePath));
+    }
 }
 
 const SpaceManagerInstance = new SpaceManager();

@@ -10,6 +10,11 @@ const CONSUMER_STATES = keyMirror({
     ACTIVE: null
 });
 
+const PRODUCER_STATES = keyMirror({
+    INACTIVE: null,
+    ACTIVE: null
+});
+
 const CONSUMER_TIERS = keyMirror({
     BASIC: null,
     PLUS: null,
@@ -19,5 +24,6 @@ const CONSUMER_TIERS = keyMirror({
 module.exports = {
     HTTP_METHODS,
     CONSUMER_STATES,
+    PRODUCER_STATES,
     CONSUMER_TIERS
 };

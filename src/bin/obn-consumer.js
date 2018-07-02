@@ -4,14 +4,14 @@
  * Lib imports
  */
 const commander = require('commander');
-const {head, split, compose} = require('ramda');
+const {head, split, compose, sort} = require('ramda');
 const BigNumber = require('bignumber.js');
 const generateName = require('sillyname');
 
 /**
  * Project imports
  */
-const {getConsumersP, createConsumerP, createActivationP} = require('../consumer');
+const {getConsumersP, createConsumerP, createConsumerActivationP} = require('../consumer');
 const {logConsoleP} = require('../utils');
 const {promptHeaderP, prompt} = require('../core/prompt');
 const ContractService = require('@open-bucket/contracts');
@@ -40,17 +40,16 @@ function createConsumerPromptP() {
 
 async function createActivationPromptP() {
 
-    // get consumer list first
     function createChooseConsumerPromptP(consumers) {
         const question = [
             {
                 type: 'list',
                 name: 'consumerId',
-                message: 'Choose your consumer to activate',
-                choices: consumers
+                message: 'Choose a Consumer to activate',
+                choices: sort((a, b) => a.id - b.id)(consumers)
                     .map(consumer => ({
                         name: `${consumer.id} ${consumer.name}`,
-                        disabled: consumer.state !== CONSUMER_STATES.INACTIVE && 'Active'
+                        disabled: consumer.state !== CONSUMER_STATES.INACTIVE && 'Activated'
                     })),
                 filter: compose(Number, head, split(' ')) // get consumerId
             }
@@ -64,7 +63,7 @@ async function createActivationPromptP() {
             {
                 type: 'list',
                 name: 'accountIndex',
-                message: 'Choose your Ethereum address',
+                message: 'Choose an Ethereum address',
                 choices: accounts
                     .map((account, index) => ({name: `${index} ${account.address}`})),
                 filter: compose(Number, head, split(' ')) // get account index
@@ -80,10 +79,10 @@ async function createActivationPromptP() {
                 type: 'input',
                 name: 'value',
                 message: 'Input your upfront payment value in Wei',
-                default: ContractService.configs.ACTIVATOR_MIN_AMOUNT,
+                default: ContractService.configs.CONSUMER_ACTIVATOR_MIN_AMOUNT,
                 validate: (value) => {
                     const bnValue = new BigNumber(value);
-                    const bnMinAmount = new BigNumber(ContractService.configs.ACTIVATOR_MIN_AMOUNT);
+                    const bnMinAmount = new BigNumber(ContractService.configs.CONSUMER_ACTIVATOR_MIN_AMOUNT);
                     if (bnValue.isGreaterThanOrEqualTo(bnMinAmount))
                         return true;
 
@@ -106,20 +105,22 @@ async function createActivationPromptP() {
 
     const {value} = await createInputValuePromptP();
 
-    return createActivationP({
+    return createConsumerActivationP({
         consumerId,
         accountIndex,
         value
     });
 }
 
+// Detach Usage:
+// obn consumer create -d -n MyConsumer -t BASIC
 commander.command('create').description('Create new Consumer with specified configs')
     .option('-d, --detach', 'Disable interactive mode')
-    .option('-a, --address <address>', 'Specify user Eth address (required)')
-    .option('-r, --directory <consumerPath>', 'Specify Consumer space')
-    .action(({detach, address, directory}) => {
+    .option('-n, --name <string>', 'Specify Consumer name')
+    .option('-t, --tier <string>', 'Specify Consumer tier')
+    .action(({detach, name, tier}) => {
         const action = detach
-            ? createConsumerP({address, directory})
+            ? createConsumerP({name, tier})
             : createConsumerPromptP();
         return action.catch(({data}) => logConsoleP('Create Consumer error:\n', data));
     });
@@ -131,13 +132,11 @@ commander.command('ls').description('List all consumers')
             .catch(({data}) => logConsoleP('Get Consumers error:\n', data));
     });
 
-commander.command('activate').description('Activate a Consumer')
+commander.command('activate').description('Activate Consumer')
     .action(function activateConsumer() {
         return createActivationPromptP()
-            .then(() => logConsoleP('Your consumer is being activated, please check its status after a few minutes', null))
-            .catch((error) => logConsoleP('Activate Consumers error:\n', error));
+            .then(() => logConsoleP('Your consumer activation has been created, your consumer will be activated after a while', null))
+            .catch((error) => logConsoleP('Activate Consumer error:\n', error));
     });
 
 commander.parse(process.argv);
-
-module.exports = {};
