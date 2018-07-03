@@ -12,7 +12,7 @@ const CM = require('../config-manager');
 
 function send({url, method = 'GET', headers = {}, token, body}) {
     let configs = {
-        baseURL: CM.configs.trackerURL,
+        baseURL: CM.configs.trackerHTTP,
         url,
         method,
         data: body,

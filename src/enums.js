@@ -21,9 +21,15 @@ const CONSUMER_TIERS = keyMirror({
     PREMIUM: null
 });
 
+const WS_TYPE = keyMirror({
+    PRODUCER: null,
+    CONSUMER: null
+});
+
 module.exports = {
     HTTP_METHODS,
     CONSUMER_STATES,
     PRODUCER_STATES,
-    CONSUMER_TIERS
+    CONSUMER_TIERS,
+    WS_TYPE
 };

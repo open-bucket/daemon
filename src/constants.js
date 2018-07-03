@@ -7,6 +7,7 @@ module.exports = {
     OBN_SPACES_PATH: join(homeDir, '.open-bucket', 'spaces'),
     DAEMON_DEFAULT_CONFIG: {
         authToken: '',
-        trackerURL: 'http://localhost:3000'
+        trackerHTTP: 'http://localhost:3000',
+        trackerWS: 'ws://localhost:4000'
     }
 };

@@ -10,7 +10,7 @@ const generateName = require('sillyname');
 /**
  * Project imports
  */
-const {createProducerP, getProducersP, createProducerActivationP} = require('../producer');
+const {createProducerP, getProducersP, createProducerActivationP, startProducerP} = require('../producer');
 const {OBN_SPACES_PATH} = require('../constants');
 const {PRODUCER_STATES} = require('../enums');
 const {logConsoleP} = require('../utils');
@@ -48,9 +48,9 @@ function createProducerPromptP() {
     return promptHeaderP(header, questions).then(createProducerP);
 }
 
-async function createActivationPromptP() {
 
-    function createChooseProducerPromptP(producers) {
+async function createActivationPromptP() {
+    function createChooseInactiveProducerPromptP(producers) {
         const question = [
             {
                 type: 'list',
@@ -86,7 +86,7 @@ async function createActivationPromptP() {
     console.log('---------Activate Producer---------');
     const {producerId} = await logConsoleP('Loading your producers...', null)
         .then(getProducersP)
-        .then(createChooseProducerPromptP);
+        .then(createChooseInactiveProducerPromptP);
 
     const {accountIndex} = await logConsoleP('Loading your accounts...', null)
         .then(::ContractService.getAccountsP)
@@ -96,6 +96,34 @@ async function createActivationPromptP() {
         producerId,
         accountIndex,
     });
+}
+
+function createStartPromptP() {
+
+    function createChooseActivatedProducerPromptP(producers) {
+        const question = [
+            {
+                type: 'list',
+                name: 'producerId',
+                message: 'Choose a Producer to activate',
+                choices: sort((a, b) => a.id - b.id)(producers)
+                    .map(consumer => ({
+                        name: `${consumer.id} ${consumer.name}`,
+                        disabled: consumer.state === PRODUCER_STATES.INACTIVE && 'Inactive'
+                    })),
+                filter: compose(Number, head, split(' ')) // get producerId
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    console.log('---------Start Producer---------');
+    return logConsoleP('Loading your producers...', null)
+        .then(getProducersP)
+        .then(createChooseActivatedProducerPromptP)
+        .then(({producerId}) => logConsoleP('Starting producer', producerId))
+        .then(startProducerP);
 }
 
 commander.command('create').description('Create new Producer with specified configs')
@@ -118,10 +146,16 @@ commander.command('ls').description('List all producers')
     });
 
 commander.command('activate').description('Activate Producer')
+// TODO: implement detach mode
     .action(() => {
         return createActivationPromptP()
             .then(() => logConsoleP('Your producer activation has been created, your producer will be activated after a while', null))
             .catch((error) => logConsoleP('Activate Producer error:\n', error));
     });
+
+commander.command('start').description('Start Producer')
+// TODO: implement detach mode
+    .action(() => createStartPromptP()
+        .catch(({message}) => logConsoleP('Start Producer error:\n', message)));
 
 commander.parse(process.argv);
