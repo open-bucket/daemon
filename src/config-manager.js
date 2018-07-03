@@ -74,6 +74,10 @@ class ConfigManager {
         return this.readOBNConfigFileP(`consumer-${consumerId}`);
     }
 
+    readProducerConfigFileP(producerId) {
+        return this.readOBNConfigFileP(`producer-${producerId}`);
+    }
+
     get configs() {
         return this._configs;
     }

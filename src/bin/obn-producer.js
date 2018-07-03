@@ -6,6 +6,7 @@
 const commander = require('commander');
 const {head, split, compose, sort} = require('ramda');
 const generateName = require('sillyname');
+const bytes = require('bytes');
 
 /**
  * Project imports
@@ -36,12 +37,16 @@ function createProducerPromptP() {
         {
             type: 'input',
             name: 'spaceLimit',
-            message: 'Input the Producer Space limit in GB',
-            default: 5,
+            message: 'Input the Producer Space limit',
+            default: '5 GB',
             validate: (value) => {
-                return Number(value) > 1 || 'Your limit must be larger than 1GB';
-            },
-            filter: Number
+                const valueInByte = bytes.parse(value);
+                const oneGB = bytes.parse('1 GB');
+                if (!valueInByte) {
+                    return 'Your input is not valid';
+                }
+                return valueInByte >= oneGB || 'Your limit must be larger or equal 1 GB';
+            }
         }
     ];
 
@@ -49,7 +54,7 @@ function createProducerPromptP() {
 }
 
 
-async function createActivationPromptP() {
+async function createProducerActivationPromptP() {
     function createChooseInactiveProducerPromptP(producers) {
         const question = [
             {
@@ -98,7 +103,7 @@ async function createActivationPromptP() {
     });
 }
 
-function createStartPromptP() {
+function startProducerPromptP() {
 
     function createChooseActivatedProducerPromptP(producers) {
         const question = [
@@ -122,15 +127,14 @@ function createStartPromptP() {
     return logConsoleP('Loading your producers...', null)
         .then(getProducersP)
         .then(createChooseActivatedProducerPromptP)
-        .then(({producerId}) => logConsoleP('Starting producer', producerId))
-        .then(startProducerP);
+        .then(({producerId}) => startProducerP(producerId));
 }
 
 commander.command('create').description('Create new Producer with specified configs')
     .option('-d, --detach', 'Disable interactive mode')
-    .option('-n, --name <string>', 'Specify Producer name')
+    .option('-n, --name <string>', 'Specify Producer name', generateName())
     .option('-p, --space-path <string>', 'Specify Producer space path')
-    .option('-l, --space-limit <number>', 'Specify Producer space limit')
+    .option('-l, --space-limit <string>', 'Specify Producer space limit', '5 GB')
     .action(({detach, spacePath, spaceLimit, name}) => {
         const action = detach
             ? createProducerP({spacePath, spaceLimit, name})
@@ -146,16 +150,27 @@ commander.command('ls').description('List all producers')
     });
 
 commander.command('activate').description('Activate Producer')
-// TODO: implement detach mode
-    .action(() => {
-        return createActivationPromptP()
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-a, --account-index <number>', 'Specify account index', Number)
+    .option('-p, --producer-id <number>', 'Specify Producer id', Number)
+    .action(({detach, accountIndex, producerId}) => {
+        const action = detach
+            ? createProducerActivationP({producerId, accountIndex})
+            : createProducerActivationPromptP();
+        return action
             .then(() => logConsoleP('Your producer activation has been created, your producer will be activated after a while', null))
             .catch((error) => logConsoleP('Activate Producer error:\n', error));
     });
 
 commander.command('start').description('Start Producer')
-// TODO: implement detach mode
-    .action(() => createStartPromptP()
-        .catch(({message}) => logConsoleP('Start Producer error:\n', message)));
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-p, --producer-id <number>', 'Specify Producer id', Number)
+    .action(({detach, producerId}) => {
+        const action = detach
+            ? startProducerP(producerId)
+            : startProducerPromptP();
+        return action
+            .catch(({message}) => logConsoleP('Start Producer error:\n', message));
+    });
 
 commander.parse(process.argv);
