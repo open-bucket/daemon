@@ -8,6 +8,7 @@ const api = require('../core/api');
 const {connectProducerP} = require('../core/ws');
 const {OBN_SPACES_PATH} = require('../constants');
 const {createDebugLogger} = require('../utils');
+const {WS_ACTIONS} = require('../enums');
 
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('producer');
@@ -40,64 +41,64 @@ function createProducerActivationP({producerId, accountIndex}) {
     return ContractService.createProducerActivationP({producerId, accountIndex});
 }
 
-async function syncP(producerId) {
-    const stats = await SM.getProducerSpaceStatP(producerId);
-    return stats;
-}
-
-// reject: serve files or receiving file is rejected
 async function startProducerP(id) {
+    async function reportSpaceStatsP(producerId) {
+        const stats = await SM.getProducerSpaceStatP(producerId);
+        return wsClient.send(JSON.stringify({
+            action: WS_ACTIONS.REPORT_PRODUCER_SPACE_STATS,
+            payload: stats
+        }));
+    }
+
+    function handleMessage(rawMessage) {
+        const {action, payload} = JSON.parse(rawMessage);
+        switch (action) {
+            // TODO: this is just the demo action. Change this when we do actual implementation
+            case WS_ACTIONS.RECOVER_DATA:
+                console.log('RECOVER_DATA received', payload);
+        }
+        console.log('on wsClient message', {action, payload});
+    }
+
+    function handleClose(code) {
+        console.log('wsClient closed with code', code);
+    }
+
+    function handleError(error) {
+        console.log('wsClient error with error', error);
+    }
+
     console.log(`Starting Producer ${id}...`);
     const wsClient = await connectProducerP(id);
 
+    // NOTICE: WS connection is the root that keep this fn from being terminated
     wsClient
-        .on('close', (param) => {
-            // TODO
-            console.log('on wsClient closed', param);
-        })
-        .on('error', (param) => {
-            // TODO
-            console.log('on wsClient closed', param);
-        });
+        .on('message', handleMessage)
+        .on('close', handleClose)
+        .on('error', handleError);
 
     console.log('Connected to Tracker server');
 
-    console.log('Syncing data...');
-    const result = await syncP(id);
-    console.log('result of sync: ', result);
-    console.log('Synced data');
-    /*
-    Tracker needs to know:
-    - available storage (limit - current size)
-    - hashes of current files in producer space
-        - Tracker will check if the files is correct with the hashes in DB,
-           else, a file is corrupted:
-           - Tracker sends:
-           {
-                action: RECOVER_FILES,
-                payload: [{name: 'abc-part0', magnetURI: 'the magnetURI of the shard'}]
-           }
-           - When Daemon receives RECOVER_FILES action, it will delete current files & download new files
-    - When all files is OK
-    - Syncing is done. Producer now is ready for receiving & serving files. Add the producer to connectedProducer
-     */
+
+    console.log('Gathering producer space stats...');
+    await reportSpaceStatsP(id);
+    console.log('Reported producer space stats...');
 
     /*
-    const wsClient = await connectProducer({url, token, {type: 'PRODUCER', id}})
-                        .then(logConsoleP('Connected to Tracker server'));
-
-    await syncFilesP(wsClient).then(logConsoleP('Synced data'))
-
-    return logConsoleP(`Producer ${id} has been started, now receiving & serving data...`)
-            .then(Promise.all([receiveData(param), serveData(param)]))
-
-     // receiveData & serveData is 2 long running promises
-     // They will log out many things: file received, progress, space status, etc...
+    TODO:
+    Step 1: Daemon connects to Tracker WS
+    Step 2:
+     - Daemon gathers local Producer space stats & report to Tracker.
+     - Tracker process local Producer space stat & start dispatching actions to daemon to sync file (recover or remove)
+         - Tracker checks data correctness of local Producer space if there're corrupted files:
+               - Tracker sends:
+               {
+                    action: RECOVER_FILES,
+                    payload: [{name: 'abc-part0', magnetURI: 'the magnetURI of the shard'}]
+               }
+               - When Daemon receives RECOVER_FILES action, it deletes current files & download new files
+    Step 3: Daemon listens on messages from Tracker & show stats: action received, progress, space status, etc...
      */
-    // Step 1: connecting to tracker server
-    // Step 2: syncing files
-    // Step 3: producer 1 has been started
-    // show file received, progress, space status, etc...
 }
 
 module.exports = {

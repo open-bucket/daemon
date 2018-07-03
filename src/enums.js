@@ -26,10 +26,16 @@ const WS_TYPE = keyMirror({
     CONSUMER: null
 });
 
+const WS_ACTIONS = keyMirror({
+    REPORT_PRODUCER_SPACE_STATS: null,
+    RECOVER_DATA: null
+});
+
 module.exports = {
     HTTP_METHODS,
     CONSUMER_STATES,
     PRODUCER_STATES,
     CONSUMER_TIERS,
-    WS_TYPE
+    WS_TYPE,
+    WS_ACTIONS
 };
