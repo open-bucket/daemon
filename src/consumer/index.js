@@ -6,7 +6,8 @@ const BPromise = require('bluebird');
 const { createReadStream, stat } = require('fs');
 const { basename, join } = require('path');
 const { createGzip } = require('zlib');
-const { seed } = require('../core/torrent');
+const bytes = require('bytes');
+
 /**
  * Project imports
  */
@@ -16,6 +17,7 @@ const api = require('../core/api');
 const ContractService = require('@open-bucket/contracts');
 const { splitToDiskP } = require('../core/file');
 const { createCipher } = require('../core/crypto');
+const { seed } = require('../core/torrent');
 
 const statP = BPromise.promisify(stat);
 
@@ -50,53 +52,45 @@ function createConsumerActivationP({ consumerId, accountIndex, value }) {
 }
 
 async function updateConsumerP(consumer) {
-    const newConsumerInfo = await api.put({ url: `/consumers/${consumer.id}`, body: consumer, token: CM.configs.authToken });
-    console.log('Updated consumer: ', newConsumerInfo);
-    return newConsumerInfo;
-
+    return await api.put({url: `/consumers/${consumer.id}`, body: consumer, token: CM.configs.authToken});
 }
 
 async function _prepareFileP({ filePath, key, space }) {
     if (!key) {
-        return BPromise.reject(new Error('Consumer key is not found'));
+        throw new Error('Consumer key is not found');
     }
 
     const [inputFileStat, outputDirStat] = await BPromise.all([statP(filePath), statP(space)]);
 
     if (!inputFileStat.isFile()) {
-        return BPromise.reject(new Error('The given file is not valid'));
+        throw new Error('Target is not a file');
     }
 
     if (!outputDirStat.isDirectory()) {
-        return BPromise.reject(new Error('Given consumer space is not a directory'));
+        throw new Error('Given consumer space is not a directory');
     }
 
     if (!inputFileStat.size) {
-        return BPromise.reject(new Error('File is empty'));
+        throw new Error('File is empty');
     }
 
-    const GB_SIZE = Math.pow(1024, 3);
-    // consumerSpace = ~/.open-bucket/spaces/consumer-1
-    // filePath = ~/somewhere/asd.pdf
-    const rootFileName = join(space, basename(filePath));
+    const PART_SIZE = bytes.parse('1GB');
+    const filePathInConsumerSpace = join(space, basename(filePath));
     const encryptedFileStream = createReadStream(filePath)
         .pipe(createCipher(key))
         .pipe(createGzip());
-    return await splitToDiskP(encryptedFileStream, GB_SIZE, rootFileName);
+    return splitToDiskP(encryptedFileStream, PART_SIZE, filePathInConsumerSpace);
 }
 
 async function uploadFile({ name, filePath, consumerId }) {
     console.log('Start uploading process...');
     console.log('> Please don\'t open/modify the file in during the process');
 
-    // CASES:
-    // - read consumer config file failed
-    // - make sure consumer space is present
-    // - filePath is invalid
     const shards = await CM.readConsumerConfigFileP(consumerId)
         .then(({ key, space }) => _prepareFileP({ filePath, key, space }));
     const streams = shards.map(shard => createReadStream(shard));
     const magnetUris = await Promise.all(streams.map(stream => seed(stream)));
+
     const file = await api.post({ url: '/files', body: { magnetUris, name, consumerId }, token: CM.configs.authToken });
     return file;
 }
