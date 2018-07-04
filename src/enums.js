@@ -27,8 +27,10 @@ const WS_TYPE = keyMirror({
 });
 
 const WS_ACTIONS = keyMirror({
-    REPORT_PRODUCER_SPACE_STATS: null,
-    RECOVER_DATA: null
+    PRODUCER_REPORT_SPACE_STATS: null,
+    RECOVER_DATA: null,
+    CONSUMER_FILE_AVAILABILITY_UPDATED: null,
+    CONSUMER_UPLOAD_FILE: null
 });
 
 module.exports = {

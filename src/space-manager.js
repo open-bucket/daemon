@@ -88,6 +88,18 @@ class SpaceManager {
         };
     }
 
+    fileToHashP(path) {
+        return new BPromise(resolve => {
+            const stream = createReadStream(path)
+                .pipe(createHash('md5'))
+                .on('readable', () => {
+                    const data = stream.read();
+                    if (data) {
+                        resolve(data.toString('hex'));
+                    }
+                });
+        });
+    }
 
     //////////
     // Private
@@ -104,21 +116,8 @@ class SpaceManager {
         const fileNames = await readdirP(path);
         // assuming this dir don't have recursive structure
         return BPromise.all(fileNames.map(name =>
-            this._fileToHashP((join(path, name))).then(hash => ({name, hash}))
+            this.fileToHashP((join(path, name))).then(hash => ({name, hash}))
         ));
-    }
-
-    _fileToHashP(path) {
-        return new BPromise(resolve => {
-            const stream = createReadStream(path)
-                .pipe(createHash('md5'))
-                .on('readable', () => {
-                    const data = stream.read();
-                    if (data) {
-                        resolve(data.toString('hex'));
-                    }
-                });
-        });
     }
 }
 

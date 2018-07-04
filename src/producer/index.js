@@ -45,7 +45,7 @@ async function startProducerP(id) {
     async function reportSpaceStatsP(producerId) {
         const stats = await SM.getProducerSpaceStatP(producerId);
         return wsClient.send(JSON.stringify({
-            action: WS_ACTIONS.REPORT_PRODUCER_SPACE_STATS,
+            action: WS_ACTIONS.PRODUCER_REPORT_SPACE_STATS,
             payload: stats
         }));
     }
