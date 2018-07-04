@@ -40,51 +40,13 @@ class SpaceManager {
         return mkdirP(producerSpacePath).then(constant(producerSpacePath));
     }
 
-    /*
-      {
-        action: SYNC,
-        payload: {
-            availableSpace: 5,
-            data: [
-                {name: 'abc-part0', hash: 'fqwcxzvqcd'},
-                {name: 'asdqw-part1', hash: 'asdqwdqvcxzxc'}
-            ]
-        }
-      }
-     */
     async getProducerSpaceStatP(producerId) {
-        /*
-        identify files based on their hash & name.
-        DB:
-            data: [
-                {name: 'abc-part0', hash: 'asdasda'}
-                {name: 'abc-part1', hash: 'asdasda'}
-            ]
-
-        Current:
-            data: [
-                {name: 'abc-part0', hash: 'asdasda'}
-                {name: 'abc-part1', hash: 'asdasda'}
-            ]
-
-        Output:
-        {
-            availableSpace: 123123123123
-            data: [
-                {name: 'abc-part0', hash: 'asdasda'}
-                {name: 'abc-part1', hash: 'asdasda'}
-            ]
-        }
-         */
         const {spaceLimit: rawSpaceLimit, space: spacePath} = await CM.readProducerConfigFileP(producerId);
         const actualSize = await this._getDirSizeP(spacePath);
         const spaceLimit = bytes.parse(rawSpaceLimit);
 
-        const data = await this._getDirHash(spacePath);
-
         return {
             availableSpace: spaceLimit - actualSize,
-            data
         };
     }
 
@@ -110,14 +72,6 @@ class SpaceManager {
         // assuming this dir don't have recursive structure
         const files = await BPromise.all(fileNames.map(name => statP(join(path, name))));
         return files.reduce((acc, curr) => acc + curr.size, 0);
-    }
-
-    async _getDirHash(path) {
-        const fileNames = await readdirP(path);
-        // assuming this dir don't have recursive structure
-        return BPromise.all(fileNames.map(name =>
-            this.fileToHashP((join(path, name))).then(hash => ({name, hash}))
-        ));
     }
 }
 

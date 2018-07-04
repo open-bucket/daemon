@@ -1,4 +1,9 @@
 /**
+ * Lib imports
+ */
+const path = require('path');
+
+/**
  * Project imports
  */
 const ContractService = require('@open-bucket/contracts');
@@ -9,6 +14,7 @@ const {connectProducerP} = require('../core/ws');
 const {OBN_SPACES_PATH} = require('../constants');
 const {createDebugLogger} = require('../utils');
 const {WS_ACTIONS} = require('../enums');
+const WebTorrentClient = require('../webtorrent-client');
 
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('producer');
@@ -42,25 +48,47 @@ function createProducerActivationP({producerId, accountIndex}) {
 }
 
 async function startProducerP(id) {
-    async function reportSpaceStatsP(producerId) {
-        const stats = await SM.getProducerSpaceStatP(producerId);
+    async function reportSpaceStatsP() {
+        const stats = await SM.getProducerSpaceStatP(id);
         return wsClient.send(JSON.stringify({
             action: WS_ACTIONS.PRODUCER_REPORT_SPACE_STATS,
             payload: stats
         }));
     }
 
+    async function handleProducerShardOrderP({name, magnetURI, size}) {
+        const {space} = await CM.readProducerConfigFileP(id);
+        const {availableSpace} = await SM.getProducerSpaceStatP(id);
+
+        log('Handling PRODUCER_SHARD_ORDER', name);
+
+        if (availableSpace > size) {
+            const filePath = path.join(space, name);
+            await WebTorrentClient.addP(magnetURI, {filePath});
+            const hash = await SM.fileToHashP(filePath);
+            const message = {
+                action: WS_ACTIONS.PRODUCER_SHARD_ORDER_CONFIRM,
+                payload: {name, hash, size}
+            };
+            wsClient.send(JSON.stringify(message));
+            return {name, hash, size};
+        } else {
+            log('Producer space limit is reached, skip PRODUCER_SHARD_ORDER', null);
+        }
+    }
+
     function handleMessage(rawMessage) {
         const {action, payload} = JSON.parse(rawMessage);
         switch (action) {
-            // TODO: this is just the demo action. Change this when we do actual implementation
-            case WS_ACTIONS.RECOVER_DATA:
-                console.log('RECOVER_DATA received', payload);
+            case WS_ACTIONS.PRODUCER_SHARD_ORDER:
+                handleProducerShardOrderP(payload)
+                    .then(() => log('Handled PRODUCER_SHARD_ORDER', payload.name))
+                    .catch(log('Error occurred while handling PRODUCER_SHARD_ORDER'));
         }
-        console.log('on wsClient message', {action, payload});
     }
 
     function handleClose(code) {
+        // TODO: delete all files in producer space
         console.log('wsClient closed with code', code);
     }
 
@@ -81,7 +109,7 @@ async function startProducerP(id) {
 
 
     console.log('Gathering producer space stats...');
-    await reportSpaceStatsP(id);
+    await reportSpaceStatsP();
     console.log('Reported producer space stats...');
 
     /*

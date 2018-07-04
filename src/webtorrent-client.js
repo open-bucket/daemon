@@ -3,6 +3,7 @@
  */
 const WebTorrent = require('webtorrent');
 const BPromise = require('bluebird');
+const {createWriteStream} = require('fs');
 
 /**
  * Project imports
@@ -35,9 +36,15 @@ class WebTorrentClient {
     }
 
     // resolve when download is done
-    addP({magnetURI, path}) {
+    addP(magnetURI, {filePath}) {
         return new BPromise(resolve => {
-            this.client.add(magnetURI, {path}, resolve);
+            this.client.add(magnetURI, (torrent) => {
+                torrent
+                    .files[0] // each shard torrent only contains 1 file
+                    .createReadStream()
+                    .pipe(createWriteStream(filePath))
+                    .on('finish', resolve);
+            });
         });
     }
 

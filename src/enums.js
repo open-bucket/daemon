@@ -28,7 +28,8 @@ const WS_TYPE = keyMirror({
 
 const WS_ACTIONS = keyMirror({
     PRODUCER_REPORT_SPACE_STATS: null,
-    RECOVER_DATA: null,
+    PRODUCER_SHARD_ORDER: null,
+    PRODUCER_SHARD_ORDER_CONFIRM: null,
     CONSUMER_FILE_AVAILABILITY_UPDATED: null,
     CONSUMER_UPLOAD_FILE: null
 });

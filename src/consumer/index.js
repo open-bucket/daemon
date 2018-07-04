@@ -104,15 +104,18 @@ async function uploadP({filePath, consumerId}) {
         .on('error', handleError);
 
     console.log('Preparing file...');
-    console.log('> Do NOT open/modify the file during the process');
+    console.log('> Do NOT open/modify the file');
     const {key, space} = await CM.readConsumerConfigFileP(consumerId);
     const shardPaths = await _prepareFileP({filePath, key, space});
-    console.log('shardPaths', shardPaths);
-    const shardStats = await BPromise.all(shardPaths.map(path => statP(path)));
-    const magnetURIs = await Promise.all(
-        shardPaths.map(path =>
-            WebTorrentClient.seedP({stream: createReadStream(path), name: basename(path)})))
-        .then(torrents => torrents.map(t => t.magnetURI));
+    const shardsInfo = await BPromise.all(shardPaths.map(path =>
+        BPromise.all([
+            statP(path).then(prop('size')),
+            SM.fileToHashP(path),
+            WebTorrentClient.seedP({
+                stream: createReadStream(path),
+                name: basename(path)
+            }).then(prop('magnetURI'))]
+        )));
 
     const message = {
         action: WS_ACTIONS.CONSUMER_UPLOAD_FILE,
@@ -121,14 +124,19 @@ async function uploadP({filePath, consumerId}) {
             name: basename(filePath),
             hash: await SM.fileToHashP(filePath),
             size: await statP(filePath).then(prop('size')),
-            shards: shardStats.map((stat, index) =>
-                ({name: basename(shardPaths[index]), magnetURI: magnetURIs[index], size: stat.size}))
+            shards: shardsInfo.map(([size, hash, magnetURI], index) => ({
+                name: basename(shardPaths[index]),
+                magnetURI,
+                hash,
+                size,
+            }))
         }
     };
 
     console.log('Uploading file...');
-    console.log('> Do NOT modify the consumer space during the process');
+    console.log('> Do NOT modify the consumer space');
     wsClient.send(JSON.stringify(message));
+    // TODO: remember to destroy the webtorrent client or the cli wil hang
     /*
     When we have magnetURIs, send
     const message = {
