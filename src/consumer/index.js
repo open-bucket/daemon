@@ -15,8 +15,16 @@ const ContractService = require('@open-bucket/contracts');
 // We don't handle errors here since they will not be propagated to CLI or Client.
 // CLI or Client needs to handle errors on their own.
 
-function getConsumersP() {
+function getAllConsumersP() {
     return api.get({url: '/consumers', token: CM.configs.authToken});
+}
+
+function getConsumerP(id) {
+    return api.get({url: `/consumers/${id}`, token: CM.configs.authToken});
+}
+
+function getConsumerFileP(consumerId) {
+    return api.get({url: `/consumers/${consumerId}/files`, token: CM.configs.authToken});
 }
 
 async function createConsumerP({tier, name}) {
@@ -43,6 +51,8 @@ function createConsumerActivationP({consumerId, accountIndex, value}) {
 
 module.exports = {
     createConsumerP,
-    getConsumersP,
+    getAllConsumersP,
+    getConsumerP,
+    getConsumerFileP,
     createConsumerActivationP
 };

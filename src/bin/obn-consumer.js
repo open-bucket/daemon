@@ -4,14 +4,21 @@
  * Lib imports
  */
 const commander = require('commander');
-const {head, split, compose, sort} = require('ramda');
+const {head, split, compose, sort, zipObj} = require('ramda');
 const BigNumber = require('bignumber.js');
 const generateName = require('sillyname');
+const BPromise = require('bluebird');
 
 /**
  * Project imports
  */
-const {getConsumersP, createConsumerP, createConsumerActivationP} = require('../consumer');
+const {
+    getAllConsumersP,
+    getConsumerP,
+    getConsumerFileP,
+    createConsumerP,
+    createConsumerActivationP
+} = require('../consumer');
 const {logConsoleP} = require('../utils');
 const {promptHeaderP, prompt} = require('../core/prompt');
 const ContractService = require('@open-bucket/contracts');
@@ -96,7 +103,7 @@ async function createActivationPromptP() {
 
     console.log('---------Activate Consumer---------');
     const {consumerId} = await logConsoleP('Loading your consumers...', null)
-        .then(getConsumersP)
+        .then(getAllConsumersP)
         .then(createChooseConsumerPromptP);
 
     const {accountIndex} = await logConsoleP('Loading your accounts...', null)
@@ -127,9 +134,17 @@ commander.command('create').description('Create new Consumer with specified conf
 
 commander.command('ls').description('List all consumers')
     .action(function listConsumers() {
-        return getConsumersP()
+        return getAllConsumersP()
             .then(logConsoleP('Consumers:\n'))
             .catch(({data}) => logConsoleP('Get Consumers error:\n', data));
+    });
+
+commander.command('describe <id>').description('Describe a consumer')
+    .action(function describeConsumer(id) {
+        return BPromise.all([getConsumerP(id), getConsumerFileP(id)])
+            .then(zipObj(['consumer', 'files']))
+            .then(logConsoleP('Consumer:\n'))
+            .catch(({data}) => logConsoleP('Get Consumer error:\n', data));
     });
 
 commander.command('activate').description('Activate Consumer')
