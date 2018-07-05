@@ -22,6 +22,10 @@ function connectTrackerServerP(metadata) {
         wsClient
             .once('open', () => resolve(wsClient))
             .once('error', reject);
+
+        wsClient.sendP = message => new BPromise(resolve => {
+            wsClient.send(message, resolve);
+        });
     });
 }
 
@@ -30,6 +34,12 @@ function connectProducerP(id) {
     return connectTrackerServerP({type: WS_TYPE.PRODUCER, id});
 }
 
+// returns Promise(wsClient)
+function connectConsumerP(id) {
+    return connectTrackerServerP({type: WS_TYPE.CONSUMER, id});
+}
+
 module.exports = {
-    connectProducerP
+    connectProducerP,
+    connectConsumerP
 };

@@ -7,9 +7,10 @@ const BPromise = require('bluebird');
 const bytes = require('bytes');
 const {createHash} = require('crypto');
 
-const {stat, readdir, createReadStream} = require('fs');
+const {stat, readdir, createReadStream, unlink} = require('fs');
 const statP = BPromise.promisify(stat);
 const readdirP = BPromise.promisify(readdir);
+const unlinkP = BPromise.promisify(unlink);
 
 /**
  * Project imports
@@ -40,75 +41,28 @@ class SpaceManager {
         return mkdirP(producerSpacePath).then(constant(producerSpacePath));
     }
 
-    /*
-      {
-        action: SYNC,
-        payload: {
-            availableSpace: 5,
-            data: [
-                {name: 'abc-part0', hash: 'fqwcxzvqcd'},
-                {name: 'asdqw-part1', hash: 'asdqwdqvcxzxc'}
-            ]
-        }
-      }
-     */
     async getProducerSpaceStatP(producerId) {
-        /*
-        identify files based on their hash & name.
-        DB:
-            data: [
-                {name: 'abc-part0', hash: 'asdasda'}
-                {name: 'abc-part1', hash: 'asdasda'}
-            ]
-
-        Current:
-            data: [
-                {name: 'abc-part0', hash: 'asdasda'}
-                {name: 'abc-part1', hash: 'asdasda'}
-            ]
-
-        Output:
-        {
-            availableSpace: 123123123123
-            data: [
-                {name: 'abc-part0', hash: 'asdasda'}
-                {name: 'abc-part1', hash: 'asdasda'}
-            ]
-        }
-         */
         const {spaceLimit: rawSpaceLimit, space: spacePath} = await CM.readProducerConfigFileP(producerId);
         const actualSize = await this._getDirSizeP(spacePath);
         const spaceLimit = bytes.parse(rawSpaceLimit);
 
-        const data = await this._getDirHash(spacePath);
-
         return {
             availableSpace: spaceLimit - actualSize,
-            data
         };
     }
 
-
-    //////////
-    // Private
-    //////////
-
-    async _getDirSizeP(path) {
-        const fileNames = await readdirP(path);
-        // assuming this dir don't have recursive structure
-        const files = await BPromise.all(fileNames.map(name => statP(join(path, name))));
-        return files.reduce((acc, curr) => acc + curr.size, 0);
+    removeConsumerFileP(consumerId, name) {
+        const path = join(OBN_SPACES_PATH, `consumer-${consumerId}`, name);
+        return unlinkP(path);
     }
 
-    async _getDirHash(path) {
-        const fileNames = await readdirP(path);
-        // assuming this dir don't have recursive structure
-        return BPromise.all(fileNames.map(name =>
-            this._fileToHashP((join(path, name))).then(hash => ({name, hash}))
-        ));
+    async removeProducerFileP(producerId, fileName) {
+        const {space: spacePath} = await CM.readProducerConfigFileP(producerId);
+        const filePath = join(spacePath, fileName);
+        return unlinkP(filePath);
     }
 
-    _fileToHashP(path) {
+    fileToHashP(path) {
         return new BPromise(resolve => {
             const stream = createReadStream(path)
                 .pipe(createHash('md5'))
@@ -119,6 +73,17 @@ class SpaceManager {
                     }
                 });
         });
+    }
+
+    //////////
+    // Private
+    //////////
+
+    async _getDirSizeP(path) {
+        const fileNames = await readdirP(path);
+        // assuming this dir don't have recursive structure
+        const files = await BPromise.all(fileNames.map(name => statP(join(path, name))));
+        return files.reduce((acc, curr) => acc + curr.size, 0);
     }
 }
 

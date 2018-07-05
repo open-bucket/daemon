@@ -4,14 +4,22 @@
  * Lib imports
  */
 const commander = require('commander');
-const {head, split, compose, sort} = require('ramda');
+const {head, split, compose, sort, zipObj} = require('ramda');
 const BigNumber = require('bignumber.js');
 const generateName = require('sillyname');
+const BPromise = require('bluebird');
 
 /**
  * Project imports
  */
-const {getConsumersP, createConsumerP, createConsumerActivationP} = require('../consumer');
+const {
+    getAllConsumersP,
+    getConsumerP,
+    getConsumerFileP,
+    createConsumerP,
+    createConsumerActivationP,
+    uploadP
+} = require('../consumer');
 const {logConsoleP} = require('../utils');
 const {promptHeaderP, prompt} = require('../core/prompt');
 const ContractService = require('@open-bucket/contracts');
@@ -40,7 +48,7 @@ function createConsumerPromptP() {
 
 async function createActivationPromptP() {
 
-    function createChooseConsumerPromptP(consumers) {
+    function chooseInactiveConsumerPromptP(consumers) {
         const question = [
             {
                 type: 'list',
@@ -58,7 +66,7 @@ async function createActivationPromptP() {
         return prompt(question);
     }
 
-    function createChooseAccountPromptP(accounts) {
+    function chooseAccountPromptP(accounts) {
         const questions = [
             {
                 type: 'list',
@@ -73,7 +81,7 @@ async function createActivationPromptP() {
         return prompt(questions);
     }
 
-    function createInputValuePromptP() {
+    function inputValuePromptP() {
         const questions = [
             {
                 type: 'input',
@@ -96,14 +104,14 @@ async function createActivationPromptP() {
 
     console.log('---------Activate Consumer---------');
     const {consumerId} = await logConsoleP('Loading your consumers...', null)
-        .then(getConsumersP)
-        .then(createChooseConsumerPromptP);
+        .then(getAllConsumersP)
+        .then(chooseInactiveConsumerPromptP);
 
     const {accountIndex} = await logConsoleP('Loading your accounts...', null)
         .then(::ContractService.getAccountsP)
-        .then(createChooseAccountPromptP);
+        .then(chooseAccountPromptP);
 
-    const {value} = await createInputValuePromptP();
+    const {value} = await inputValuePromptP();
 
     return createConsumerActivationP({
         consumerId,
@@ -111,6 +119,39 @@ async function createActivationPromptP() {
         value
     });
 }
+
+async function uploadPromptP() {
+    function chooseConsumerAndInputFilePathPrompt(consumers) {
+        const question = [
+            {
+                type: 'list',
+                name: 'consumerId',
+                message: 'Choose a Consumer to upload',
+                choices: sort((a, b) => a.id - b.id)(consumers)
+                    .map(consumer => ({
+                        name: `${consumer.id} ${consumer.name}`,
+                        disabled: consumer.state === CONSUMER_STATES.INACTIVE && 'Inactive'
+                    })),
+                filter: compose(Number, head, split(' '))
+            },
+            {
+                type: 'input',
+                name: 'filePath',
+                message: 'Input path to the file',
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    console.log('---------Upload a file---------');
+    const {consumerId, filePath} = await logConsoleP('Loading your producers...', null)
+        .then(getAllConsumersP)
+        .then(chooseConsumerAndInputFilePathPrompt);
+
+    return uploadP({consumerId, filePath});
+}
+
 
 // Detach Usage:
 // obn consumer create -d -n MyConsumer -t BASIC
@@ -127,9 +168,17 @@ commander.command('create').description('Create new Consumer with specified conf
 
 commander.command('ls').description('List all consumers')
     .action(function listConsumers() {
-        return getConsumersP()
+        return getAllConsumersP()
             .then(logConsoleP('Consumers:\n'))
             .catch(({data}) => logConsoleP('Get Consumers error:\n', data));
+    });
+
+commander.command('describe <id>').description('Describe a consumer')
+    .action(function describeConsumer(id) {
+        return BPromise.all([getConsumerP(id), getConsumerFileP(id)])
+            .then(zipObj(['consumer', 'files']))
+            .then(logConsoleP('Consumer:\n'))
+            .catch(({data}) => logConsoleP('Get Consumer error:\n', data));
     });
 
 commander.command('activate').description('Activate Consumer')
@@ -137,6 +186,18 @@ commander.command('activate').description('Activate Consumer')
         return createActivationPromptP()
             .then(() => logConsoleP('Your consumer activation has been created, your consumer will be activated after a while', null))
             .catch((error) => logConsoleP('Activate Consumer error:\n', error));
+    });
+
+commander.command('upload').description('Upload a file')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-c, --consumer-id <number>', 'Specify Producer id', Number)
+    .option('-p, --file-path <string>', 'Specify path to file')
+    .action(({detach, consumerId, filePath}) => {
+        const action = detach
+            ? uploadP({consumerId, filePath})
+            : uploadPromptP();
+        return action
+            .catch((error) => logConsoleP('Upload file error:\n', error));
     });
 
 commander.parse(process.argv);

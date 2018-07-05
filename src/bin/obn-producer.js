@@ -110,7 +110,7 @@ function startProducerPromptP() {
             {
                 type: 'list',
                 name: 'producerId',
-                message: 'Choose a Producer to activate',
+                message: 'Choose a Producer to start',
                 choices: sort((a, b) => a.id - b.id)(producers)
                     .map(consumer => ({
                         name: `${consumer.id} ${consumer.name}`,

@@ -27,8 +27,14 @@ const WS_TYPE = keyMirror({
 });
 
 const WS_ACTIONS = keyMirror({
-    REPORT_PRODUCER_SPACE_STATS: null,
-    RECOVER_DATA: null
+    PRODUCER_REPORT_SPACE_STATS: null,
+    PRODUCER_SHARD_ORDER: null,
+    PRODUCER_SHARD_ORDER_CONFIRM: null,
+    PRODUCER_SHARD_ORDER_DENY: null,
+    PRODUCER_SHARD_ORDER_ACCEPT: null,
+    CONSUMER_NEW_PRODUCER_ACCEPTED: null,
+    CONSUMER_UPLOAD_FILE: null,
+    CONSUMER_UPLOAD_FILE_DONE: null,
 });
 
 module.exports = {
