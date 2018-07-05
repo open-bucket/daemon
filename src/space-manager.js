@@ -7,9 +7,10 @@ const BPromise = require('bluebird');
 const bytes = require('bytes');
 const {createHash} = require('crypto');
 
-const {stat, readdir, createReadStream} = require('fs');
+const {stat, readdir, createReadStream, unlink} = require('fs');
 const statP = BPromise.promisify(stat);
 const readdirP = BPromise.promisify(readdir);
+const unlinkP = BPromise.promisify(unlink);
 
 /**
  * Project imports
@@ -48,6 +49,17 @@ class SpaceManager {
         return {
             availableSpace: spaceLimit - actualSize,
         };
+    }
+
+    removeConsumerFileP(consumerId, name) {
+        const path = join(OBN_SPACES_PATH, `consumer-${consumerId}`, name);
+        return unlinkP(path);
+    }
+
+    async removeProducerFileP(producerId, fileName) {
+        const {space: spacePath} = await CM.readProducerConfigFileP(producerId);
+        const filePath = join(spacePath, fileName);
+        return unlinkP(filePath);
     }
 
     fileToHashP(path) {

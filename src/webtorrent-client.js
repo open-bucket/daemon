@@ -43,15 +43,27 @@ class WebTorrentClient {
                     .files[0] // each shard torrent only contains 1 file
                     .createReadStream()
                     .pipe(createWriteStream(filePath))
-                    .on('finish', resolve);
+                    .once('finish', resolve);
             });
         });
     }
 
-    destroyP() {
+    get(magnetURI) {
+        return this.client.get(magnetURI);
+    }
+
+    removeP(magnetURI) {
         return new BPromise(resolve => {
-            this.client.destroy(resolve);
+            this.client.remove(magnetURI, resolve);
         });
+    }
+
+    destroyP() {
+        if (this._client) {
+            return new BPromise(resolve => {
+                this._client.destroy(resolve);
+            });
+        }
     }
 
 }

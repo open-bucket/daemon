@@ -22,6 +22,10 @@ function connectTrackerServerP(metadata) {
         wsClient
             .once('open', () => resolve(wsClient))
             .once('error', reject);
+
+        wsClient.sendP = message => new BPromise(resolve => {
+            wsClient.send(message, resolve);
+        });
     });
 }
 
