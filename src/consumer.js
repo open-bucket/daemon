@@ -12,16 +12,16 @@ const {prop} = require('ramda');
 /**
  * Project imports
  */
-const CM = require('../config-manager');
-const SM = require('../space-manager');
-const api = require('../core/api');
-const {splitToDiskP} = require('../core/file');
-const {createCipher} = require('../core/crypto');
-const {createDebugLogger} = require('../utils');
-const WebTorrentClient = require('../webtorrent-client');
+const CM = require('./config-manager');
+const SM = require('./space-manager');
+const api = require('./core/api');
+const {splitToDiskP} = require('./core/file');
+const {createCipher} = require('./core/crypto');
+const {createDebugLogger} = require('./utils');
+const WebTorrentClient = require('./webtorrent-client');
 const ContractService = require('@open-bucket/contracts');
-const {connectConsumerP} = require('../core/ws');
-const {WS_ACTIONS} = require('../enums');
+const {connectConsumerP} = require('./core/ws');
+const {WS_ACTIONS} = require('./enums');
 
 const statP = BPromise.promisify(stat);
 
@@ -86,9 +86,11 @@ async function uploadP({filePath, consumerId}) {
     }
 
     async function handleUploadFileDone({fileId, shards}) {
-        console.log(`File ${fileId} current availability has matched with desired availability, done uploading`);
-        console.log('Cleaning up resources..');
+        console.log(`File ${fileId} current availability has reached 1, done`);
+        console.log('> Your file has been uploaded to the first producers');
+        console.log('> It is now being uploaded by the producers themselves to increase the availability');
 
+        console.log('Cleaning up resources..');
         await BPromise.all(shards.map(s => SM.removeConsumerFileP(consumerId, s.name)));
         console.log('Deleted temporary shards in Consumer space');
 
@@ -120,11 +122,6 @@ async function uploadP({filePath, consumerId}) {
         console.log('wsClient error with error', error);
     }
 
-    const wsClient = await connectConsumerP(consumerId);
-    wsClient.on('message', handleMessage)
-        .on('close', handleClose)
-        .on('error', handleError);
-
     console.log('Preparing...');
     console.log('> Do NOT open/modify the file');
     const {key, space} = await CM.readConsumerConfigFileP(consumerId);
@@ -138,6 +135,11 @@ async function uploadP({filePath, consumerId}) {
                 name: basename(path)
             }).then(prop('magnetURI'))]
         )));
+
+    const wsClient = await connectConsumerP(consumerId);
+    wsClient.on('message', handleMessage)
+        .on('close', handleClose)
+        .on('error', handleError);
 
     const message = {
         action: WS_ACTIONS.CONSUMER_UPLOAD_FILE,

@@ -8,14 +8,14 @@ const shell = require('shelljs');
  * Project imports
  */
 const ContractService = require('@open-bucket/contracts');
-const CM = require('../config-manager');
-const SM = require('../space-manager');
-const api = require('../core/api');
-const {connectProducerP} = require('../core/ws');
-const {OBN_SPACES_PATH} = require('../constants');
-const {createDebugLogger} = require('../utils');
-const {WS_ACTIONS} = require('../enums');
-const WebTorrentClient = require('../webtorrent-client');
+const CM = require('./config-manager');
+const SM = require('./space-manager');
+const api = require('./core/api');
+const {connectProducerP} = require('./core/ws');
+const {OBN_SPACES_PATH} = require('./constants');
+const {createDebugLogger} = require('./utils');
+const {WS_ACTIONS} = require('./enums');
+const WebTorrentClient = require('./webtorrent-client');
 
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('producer');
