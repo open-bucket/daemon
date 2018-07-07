@@ -7,6 +7,7 @@ const path = require('path');
 const shell = require('shelljs');
 const {always, equals} = require('ramda');
 const BPromise = require('bluebird');
+const {createHash} = require('crypto');
 
 const generateFileName = (rootFileName, numFiles) => `${rootFileName}.part-${numFiles}`;
 
@@ -68,6 +69,19 @@ function splitToDiskP(fileStream, maxFileSize, rootFileName) {
     });
 }
 
+function fileToHashP(filePath) {
+    return new BPromise(resolve => {
+        const stream = fs.createReadStream(filePath)
+            .pipe(createHash('md5'))
+            .on('readable', () => {
+                const data = stream.read();
+                if (data) {
+                    resolve(data.toString('hex'));
+                }
+            });
+    });
+}
+
 function _mergeFiles(partitionIndex, partitionNames, combinationStream, callback) {
     if (equals(partitionIndex, partitionNames.length)) {
         combinationStream.end();
@@ -79,24 +93,14 @@ function _mergeFiles(partitionIndex, partitionNames, combinationStream, callback
     partitionFileStream.on('end', () => _mergeFiles(++partitionIndex, partitionNames, combinationStream, callback));
 }
 
-function mergeFilesToDiskP(partitionNames, outputPath) {
-    return new BPromise((resolve) => {
-        shell.mkdir('-p', path.dirname(outputPath));
-        let combinationStream = fs.createWriteStream(outputPath);
-        _mergeFiles(0, partitionNames, combinationStream, resolve);
-    });
-}
-
-function mergeFilesToStreamP(partitionNames) {
-    return new BPromise(resolve => {
-        let combinationStream = new stream.PassThrough();
-        resolve(combinationStream);
-        _mergeFiles(0, partitionNames, combinationStream, always(null));
-    });
+function mergePartsToStream(partsPath) {
+    let combinationStream = new stream.PassThrough();
+    _mergeFiles(0, partsPath, combinationStream, always(null));
+    return combinationStream;
 }
 
 module.exports = {
     splitToDiskP,
-    mergeFilesToStreamP,
-    mergeFilesToDiskP
+    mergePartsToStream,
+    fileToHashP
 };

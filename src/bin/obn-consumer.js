@@ -18,7 +18,8 @@ const {
     getConsumerFileP,
     createConsumerP,
     createConsumerActivationP,
-    uploadP
+    uploadP,
+    downloadP
 } = require('../consumer');
 const {logConsoleP} = require('../utils');
 const {promptHeaderP, prompt} = require('../core/prompt');
@@ -144,12 +145,69 @@ async function uploadPromptP() {
         return prompt(question);
     }
 
-    console.log('---------Upload a file---------');
-    const {consumerId, filePath} = await logConsoleP('Loading your producers...', null)
+    console.log('---------Upload file---------');
+    const {consumerId, filePath} = await logConsoleP('Loading your consumers...', null)
         .then(getAllConsumersP)
         .then(chooseConsumerAndInputFilePathPrompt);
 
     return uploadP({consumerId, filePath});
+}
+
+async function downloadPromptP() {
+
+    function chooseActiveConsumerPrompt(consumers) {
+        const questions = [{
+            type: 'list',
+            name: 'consumerId',
+            message: 'Choose a Consumer to download',
+            choices: sort((a, b) => a.id - b.id)(consumers)
+                .map(consumer => ({
+                    name: `${consumer.id} ${consumer.name}`,
+                    disabled: consumer.state === CONSUMER_STATES.INACTIVE && 'Inactive'
+                })),
+            filter: compose(Number, head, split(' '))
+        }];
+
+        return prompt(questions);
+    }
+
+    function chooseFilePrompt(files) {
+        const questions = [{
+            type: 'list',
+            name: 'fileId',
+            message: 'Choose a File to download',
+            choices: sort((a, b) => a.id - b.id)(files)
+                .map(file => ({
+                    name: `${file.id} ${file.name}`
+                })),
+            filter: compose(Number, head, split(' '))
+        }];
+
+        return prompt(questions);
+    }
+
+    function inputDownloadPathPrompt() {
+        const questions = [{
+            type: 'input',
+            name: 'downloadPath',
+            message: 'Input download Path',
+        }];
+
+        return prompt(questions);
+    }
+
+    console.log('---------Download file---------');
+    const {consumerId} = await logConsoleP('Loading your consumers...', null)
+        .then(getAllConsumersP)
+        .then(chooseActiveConsumerPrompt);
+
+    const {fileId} = await logConsoleP('Loading you files', null)
+        .then(() => getConsumerFileP(consumerId))
+        .then(chooseFilePrompt);
+
+    const {downloadPath} = await inputDownloadPathPrompt();
+
+    return downloadP({consumerId, fileId, downloadPath});
 }
 
 
@@ -190,12 +248,25 @@ commander.command('activate').description('Activate Consumer')
 
 commander.command('upload').description('Upload a file')
     .option('-d, --detach', 'Disable interactive mode')
-    .option('-c, --consumer-id <number>', 'Specify Producer id', Number)
+    .option('-c, --consumer-id <number>', 'Specify Consumer id', Number)
     .option('-p, --file-path <string>', 'Specify path to file')
     .action(({detach, consumerId, filePath}) => {
         const action = detach
             ? uploadP({consumerId, filePath})
             : uploadPromptP();
+        return action
+            .catch((error) => logConsoleP('Upload file error:\n', error));
+    });
+
+commander.command('download').description('Download a file')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-c, --consumer-id <number>', 'Specify Consumer id', Number)
+    .option('-f, --file-id <number>', 'Specify File id', Number)
+    .option('-p, --download-path <string>', 'Specify path to save the downloaded file')
+    .action(({detach, fileId, consumerId, downloadPath}) => {
+        const action = detach
+            ? downloadP({fileId, consumerId, downloadPath})
+            : downloadPromptP();
         return action
             .catch((error) => logConsoleP('Upload file error:\n', error));
     });

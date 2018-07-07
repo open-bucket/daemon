@@ -3,25 +3,25 @@
  */
 const uuid = require('uuid/v4');
 const BPromise = require('bluebird');
-const {createReadStream, stat} = require('fs');
+const {createReadStream, createWriteStream, stat} = require('fs');
 const {basename, join} = require('path');
-const {createGzip} = require('zlib');
+const {createGzip, createGunzip} = require('zlib');
 const bytes = require('bytes');
-const {prop} = require('ramda');
+const {prop, sort} = require('ramda');
 
 /**
  * Project imports
  */
-const CM = require('../config-manager');
-const SM = require('../space-manager');
-const api = require('../core/api');
-const {splitToDiskP} = require('../core/file');
-const {createCipher} = require('../core/crypto');
-const {createDebugLogger} = require('../utils');
-const WebTorrentClient = require('../webtorrent-client');
+const CM = require('./config-manager');
+const SM = require('./space-manager');
+const api = require('./core/api');
+const {splitToDiskP, mergePartsToStream, fileToHashP} = require('./core/file');
+const {createCipher, createDecipher} = require('./core/crypto');
+const {createDebugLogger} = require('./utils');
+const WebTorrentClient = require('./webtorrent-client');
 const ContractService = require('@open-bucket/contracts');
-const {connectConsumerP} = require('../core/ws');
-const {WS_ACTIONS} = require('../enums');
+const {connectConsumerP} = require('./core/ws');
+const {WS_ACTIONS} = require('./enums');
 
 const statP = BPromise.promisify(stat);
 
@@ -86,9 +86,11 @@ async function uploadP({filePath, consumerId}) {
     }
 
     async function handleUploadFileDone({fileId, shards}) {
-        console.log(`File ${fileId} current availability has matched with desired availability, done uploading`);
-        console.log('Cleaning up resources..');
+        console.log(`File ${fileId} current availability has reached 1, done`);
+        console.log('> Your file has been uploaded to the first producers');
+        console.log('> It is now being uploaded by the producers themselves to increase the availability');
 
+        console.log('Cleaning up resources..');
         await BPromise.all(shards.map(s => SM.removeConsumerFileP(consumerId, s.name)));
         console.log('Deleted temporary shards in Consumer space');
 
@@ -120,11 +122,6 @@ async function uploadP({filePath, consumerId}) {
         console.log('wsClient error with error', error);
     }
 
-    const wsClient = await connectConsumerP(consumerId);
-    wsClient.on('message', handleMessage)
-        .on('close', handleClose)
-        .on('error', handleError);
-
     console.log('Preparing...');
     console.log('> Do NOT open/modify the file');
     const {key, space} = await CM.readConsumerConfigFileP(consumerId);
@@ -132,19 +129,24 @@ async function uploadP({filePath, consumerId}) {
     const shardsInfo = await BPromise.all(shardPaths.map(path =>
         BPromise.all([
             statP(path).then(prop('size')),
-            SM.fileToHashP(path),
+            fileToHashP(path),
             WebTorrentClient.seedP({
                 stream: createReadStream(path),
                 name: basename(path)
             }).then(prop('magnetURI'))]
         )));
 
+    const wsClient = await connectConsumerP(consumerId);
+    wsClient.on('message', handleMessage)
+        .on('close', handleClose)
+        .on('error', handleError);
+
     const message = {
         action: WS_ACTIONS.CONSUMER_UPLOAD_FILE,
         payload: {
             consumerId,
             name: basename(filePath),
-            hash: await SM.fileToHashP(filePath),
+            hash: await fileToHashP(filePath),
             size: await statP(filePath).then(prop('size')),
             shards: shardsInfo.map(([size, hash, magnetURI], index) => ({
                 name: basename(shardPaths[index]),
@@ -160,6 +162,99 @@ async function uploadP({filePath, consumerId}) {
     wsClient.send(JSON.stringify(message));
 }
 
+async function downloadP({fileId, consumerId, downloadPath}) {
+
+    async function handleDownloadFileDone({name, shards}) {
+        console.log(`File ${name} has been downloaded to ${downloadPath}`);
+
+        console.log('Cleaning up resources..');
+        await BPromise.all(shards.map(s => SM.removeConsumerFileP(consumerId, s.name)));
+        console.log('Deleted temporary shards in Consumer space');
+
+        wsClient.close();
+    }
+
+    async function handleDownloadFileInfo({name: fileName, shards}) {
+        console.log('Downloading...');
+        console.log('> Do NOT modify the consumer space');
+        // Add torrents & download all the files
+        const shardPaths = await BPromise.all(shards.map(({name, magnetURI}) =>
+            WebTorrentClient.addP(magnetURI, {filePath: join(space, name)})));
+
+        function getPartNumber(name) {
+            const matches = name.match(/part-(\d)$/);
+            return Number(matches[1]);
+        }
+
+        // sort shardPaths for merging
+        const orderedShardPaths = sort((sp1, sp2) => getPartNumber(sp1) - getPartNumber(sp2), shardPaths);
+
+        function mergeDecryptAndWriteToDiskP() {
+            return new BPromise(resolve => {
+                const downloadFilePath = join(downloadPath, fileName);
+                const writeToDiskStream = createWriteStream(downloadFilePath);
+                const mergeStream = mergePartsToStream(orderedShardPaths);
+                mergeStream
+                    .pipe(createGunzip())
+                    .pipe(createDecipher(key))
+                    .pipe(writeToDiskStream)
+                    .on('finish', () => resolve(downloadFilePath));
+            });
+        }
+
+        const finalFilePath = await mergeDecryptAndWriteToDiskP();
+        const hash = await fileToHashP(finalFilePath);
+
+        const message = {
+            action: WS_ACTIONS.CONSUMER_DOWNLOAD_FILE_CONFIRMATION,
+            payload: {
+                fileId,
+                hash
+            }
+        };
+        await wsClient.sendP(JSON.stringify(message));
+    }
+
+    function handleMessage(rawMessage) {
+        log('Received new message from Tracker', rawMessage);
+        const {action, payload} = JSON.parse(rawMessage);
+        if (action === WS_ACTIONS.CONSUMER_DOWNLOAD_FILE_INFO) {
+            handleDownloadFileInfo(payload)
+                .then(() => log('Handled CONSUMER_DOWNLOAD_FILE_INFO', payload))
+                .catch(log('Error occurred while handling CONSUMER_DOWNLOAD_FILE_INFO'));
+        }
+
+        if (action === WS_ACTIONS.CONSUMER_DOWNLOAD_FILE_DONE) {
+            handleDownloadFileDone(payload)
+                .then(() => log('Handled CONSUMER_DOWNLOAD_FILE_DONE', payload))
+                .catch(log('Error occurred while handling CONSUMER_DOWNLOAD_FILE_DONE'));
+        }
+    }
+
+    function handleClose(code) {
+        console.log('Connection with Tracker has been closed with code', code);
+        WebTorrentClient.destroyP();
+    }
+
+    function handleError(error) {
+        console.log('wsClient error with error', error);
+    }
+
+    const {key, space} = await CM.readConsumerConfigFileP(consumerId);
+
+    const wsClient = await connectConsumerP(consumerId);
+    wsClient.on('message', handleMessage)
+        .on('close', handleClose)
+        .on('error', handleError);
+
+    const message = {
+        action: WS_ACTIONS.CONSUMER_DOWNLOAD_FILE,
+        payload: {fileId}
+    };
+    wsClient.send(JSON.stringify(message));
+}
+
+
 module.exports = {
     createConsumerP,
     getAllConsumersP,
@@ -167,5 +262,6 @@ module.exports = {
     getConsumerFileP,
     updateConsumerP,
     uploadP,
+    downloadP,
     createConsumerActivationP
 };

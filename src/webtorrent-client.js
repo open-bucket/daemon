@@ -35,7 +35,6 @@ class WebTorrentClient {
         });
     }
 
-    // resolve when download is done
     addP(magnetURI, {filePath}) {
         return new BPromise(resolve => {
             this.client.add(magnetURI, (torrent) => {
@@ -43,7 +42,7 @@ class WebTorrentClient {
                     .files[0] // each shard torrent only contains 1 file
                     .createReadStream()
                     .pipe(createWriteStream(filePath))
-                    .once('finish', resolve);
+                    .once('finish', () => resolve(filePath));
             });
         });
     }
