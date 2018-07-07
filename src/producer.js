@@ -12,6 +12,7 @@ const CM = require('./config-manager');
 const SM = require('./space-manager');
 const api = require('./core/api');
 const {connectProducerP} = require('./core/ws');
+const {fileToHashP} = require('./core/file');
 const {OBN_SPACES_PATH} = require('./constants');
 const {createDebugLogger} = require('./utils');
 const {WS_ACTIONS} = require('./enums');
@@ -64,7 +65,7 @@ async function startProducerP(producerId) {
             console.log(`Received shard ${shardId} order, downloading it...`);
             const filePath = path.join(space, name);
             await WebTorrentClient.addP(magnetURI, {filePath});
-            const hash = await SM.fileToHashP(filePath);
+            const hash = await fileToHashP(filePath);
             const message = {
                 action: WS_ACTIONS.PRODUCER_SHARD_ORDER_CONFIRM,
                 payload: {id: shardId, name, hash, size, magnetURI}

@@ -5,9 +5,8 @@ const mkdirP = require('mkdirp-promise');
 const {join} = require('path');
 const BPromise = require('bluebird');
 const bytes = require('bytes');
-const {createHash} = require('crypto');
 
-const {stat, readdir, createReadStream, unlink} = require('fs');
+const {stat, readdir, unlink} = require('fs');
 const statP = BPromise.promisify(stat);
 const readdirP = BPromise.promisify(readdir);
 const unlinkP = BPromise.promisify(unlink);
@@ -60,19 +59,6 @@ class SpaceManager {
         const {space: spacePath} = await CM.readProducerConfigFileP(producerId);
         const filePath = join(spacePath, fileName);
         return unlinkP(filePath);
-    }
-
-    fileToHashP(path) {
-        return new BPromise(resolve => {
-            const stream = createReadStream(path)
-                .pipe(createHash('md5'))
-                .on('readable', () => {
-                    const data = stream.read();
-                    if (data) {
-                        resolve(data.toString('hex'));
-                    }
-                });
-        });
     }
 
     //////////

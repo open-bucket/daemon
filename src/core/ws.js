@@ -29,12 +29,10 @@ function connectTrackerServerP(metadata) {
     });
 }
 
-// returns Promise(wsClient)
 function connectProducerP(id) {
     return connectTrackerServerP({type: WS_TYPE.PRODUCER, id});
 }
 
-// returns Promise(wsClient)
 function connectConsumerP(id) {
     return connectTrackerServerP({type: WS_TYPE.CONSUMER, id});
 }
