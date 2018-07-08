@@ -1,0 +1,11 @@
+# Node
+node_modules
+
+# Tests
+test
+
+# Distribution Dir
+dist
+
+# Temp dir
+temp
