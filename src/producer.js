@@ -82,6 +82,14 @@ async function startProducerP(producerId) {
         console.log(`Shard ${shardId} order confirmation has been accepted, serving it...`);
     }
 
+    async function handleProducerServeFileDone({consumerContractAddress, shards}) {
+        for (let {name} of shards) {
+            console.log(`Shard ${name} has been served successfully`);
+        }
+        console.log(`> Your payment is available at Consumer contract: ${consumerContractAddress}`);
+        console.log('> You can call withdraw() using your registered producer address to withdraw them');
+    }
+
     async function handleProducerShardOrderDeny({id: shardId, name, magnetURI}) {
         console.log(`Shard ${shardId} order confirmation has been denied, cleanup`);
 
@@ -113,6 +121,12 @@ async function startProducerP(producerId) {
             handleProducerShardOrderDeny(payload)
                 .then(() => log('Handled PRODUCER_SHARD_ORDER_DENY', payload))
                 .catch(log('Error occurred while handling PRODUCER_SHARD_ORDER'));
+        }
+
+        if (action === WS_ACTIONS.PRODUCER_SERVE_FILE_DONE) {
+            handleProducerServeFileDone(payload)
+                .then(() => log('Handled PRODUCER_SERVE_FILE_DONE', payload))
+                .catch(log('Error occurred while handling PRODUCER_SERVE_FILE_DONE'));
         }
     }
 

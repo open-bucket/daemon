@@ -182,7 +182,7 @@ async function downloadP({fileId, consumerId, downloadPath}) {
             WebTorrentClient.addP(magnetURI, {filePath: join(space, name)})));
 
         function getPartNumber(name) {
-            const matches = name.match(/part-(\d)$/);
+            const matches = name.match(/part-(\d+)$/);
             return Number(matches[1]);
         }
 
