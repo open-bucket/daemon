@@ -11,7 +11,13 @@ const bytes = require('bytes');
 /**
  * Project imports
  */
-const {createProducerP, getProducersP, createProducerActivationP, startProducerP} = require('../producer');
+const {
+    createProducerP,
+    getAllProducersP,
+    createProducerActivationP,
+    startProducerP,
+    withdrawP
+} = require('../producer');
 const {OBN_SPACES_PATH} = require('../constants');
 const {PRODUCER_STATES} = require('../enums');
 const {logConsoleP} = require('../utils');
@@ -90,7 +96,7 @@ async function createProducerActivationPromptP() {
 
     console.log('---------Activate Producer---------');
     const {producerId} = await logConsoleP('Loading your producers...', null)
-        .then(getProducersP)
+        .then(getAllProducersP)
         .then(createChooseInactiveProducerPromptP);
 
     const {accountIndex} = await logConsoleP('Loading your accounts...', null)
@@ -125,9 +131,59 @@ function startProducerPromptP() {
 
     console.log('---------Start Producer---------');
     return logConsoleP('Loading your producers...', null)
-        .then(getProducersP)
+        .then(getAllProducersP)
         .then(createChooseActivatedProducerPromptP)
         .then(({producerId}) => startProducerP(producerId));
+}
+
+async function withdrawPromptP() {
+    function chooseActiveProducerAndContractAddressPrompt(producers) {
+        const question = [
+            {
+                type: 'list',
+                name: 'producerId',
+                message: 'Choose a Producer to withdraw',
+                choices: sort((a, b) => a.id - b.id)(producers)
+                    .map(consumer => ({
+                        name: `${consumer.id} ${consumer.name}`,
+                        disabled: consumer.state === PRODUCER_STATES.INACTIVE && 'Inactive'
+                    })),
+                filter: compose(Number, head, split(' '))
+            },
+            {
+                type: 'input',
+                name: 'contractAddress',
+                message: 'Input the Consumer contract address',
+                validate: (value) => !!value || 'Use must specify Consumer contract address to withdraw from'
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    function confirmWithdrawPromptP({contractAddress, address}) {
+        const question = [
+            {
+                type: 'confirm',
+                name: 'confirmWithdraw',
+                message: `You are about to withdraw all your earned payment from contract ${contractAddress} to address ${address}. Are you sure?`,
+                default: false
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    console.log('---------Withdraw---------');
+    const producers = await getAllProducersP();
+    const {producerId, contractAddress} = await chooseActiveProducerAndContractAddressPrompt(producers);
+
+    const chosenProducer = producers.find(c => c.id === producerId);
+    const {confirmWithdraw} = await confirmWithdrawPromptP({address: chosenProducer.address, contractAddress});
+
+    return confirmWithdraw
+        && withdrawP(producerId, contractAddress)
+            .then(() => logConsoleP('Withdraw successfully', null));
 }
 
 commander.command('create').description('Create new Producer with specified configs')
@@ -144,7 +200,7 @@ commander.command('create').description('Create new Producer with specified conf
 
 commander.command('ls').description('List all producers')
     .action(() => {
-        return getProducersP()
+        return getAllProducersP()
             .then(logConsoleP('Producers:\n'))
             .catch(({data}) => logConsoleP('Get Producers error:\n', data));
     });
@@ -171,6 +227,18 @@ commander.command('start').description('Start Producer')
             : startProducerPromptP();
         return action
             .catch(({message}) => logConsoleP('Start Producer error:\n', message));
+    });
+
+commander.command('withdraw').description('Withdraw from a Consumer contract')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-p, --producer-id <number>', 'Specify Producer id', Number)
+    .option('-a, --contract-address <number>', 'Specify Contract address')
+    .action(({detach, producerId, contractAddress}) => {
+        const action = detach
+            ? withdrawP(producerId, contractAddress)
+            : withdrawPromptP();
+        return action
+            .catch(({message}) => logConsoleP('Withdraw error:\n', message));
     });
 
 commander.parse(process.argv);

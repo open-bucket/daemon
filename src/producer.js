@@ -21,8 +21,12 @@ const WebTorrentClient = require('./webtorrent-client');
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('producer');
 
-function getProducersP() {
+function getAllProducersP() {
     return api.get({url: '/producers', token: CM.configs.authToken});
+}
+
+function getProducerP(id) {
+    return api.get({url: `/producers/${id}`, token: CM.configs.authToken});
 }
 
 async function createProducerP({spacePath = OBN_SPACES_PATH, spaceLimit = '5 GB', name}) {
@@ -155,9 +159,15 @@ async function startProducerP(producerId) {
     console.log(`Producer ${producerId} has been started`);
 }
 
+async function withdrawP(producerId, contractAddress) {
+    const {address} = await getProducerP(producerId);
+    return ContractService.withdrawFromConsumerContract(contractAddress, address);
+}
+
 module.exports = {
     createProducerP,
-    getProducersP,
+    getAllProducersP,
     createProducerActivationP,
-    startProducerP
+    startProducerP,
+    withdrawP
 };

@@ -19,7 +19,8 @@ const {
     createConsumerP,
     createConsumerActivationP,
     uploadP,
-    downloadP
+    downloadP,
+    withdrawP
 } = require('../consumer');
 const {logConsoleP} = require('../utils');
 const {promptHeaderP, prompt} = require('../core/prompt');
@@ -210,6 +211,49 @@ async function downloadPromptP() {
     return downloadP({consumerId, fileId, downloadPath});
 }
 
+async function withdrawPromptP() {
+    function chooseActiveConsumerPrompt(consumers) {
+        const question = [
+            {
+                type: 'list',
+                name: 'consumerId',
+                message: 'Choose a Consumer to withdraw',
+                choices: sort((a, b) => a.id - b.id)(consumers)
+                    .map(consumer => ({
+                        name: `${consumer.id} ${consumer.name}`,
+                        disabled: consumer.state === CONSUMER_STATES.INACTIVE && 'Inactive'
+                    })),
+                filter: compose(Number, head, split(' '))
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    function confirmWithdrawPromptP({contractAddress, address}) {
+        const question = [
+            {
+                type: 'confirm',
+                name: 'confirmWithdraw',
+                message: `You are about to withdraw all your upfront payment from contract ${contractAddress} to address ${address}. Are you sure?`,
+                default: false
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    console.log('---------Withdraw---------');
+    const consumers = await getAllConsumersP();
+    const {consumerId} = await chooseActiveConsumerPrompt(consumers);
+
+    const chosenConsumer = consumers.find(c => c.id === consumerId);
+    const {confirmWithdraw} = await confirmWithdrawPromptP(chosenConsumer);
+
+    return confirmWithdraw
+        && withdrawP(consumerId)
+            .then(() => logConsoleP('Withdraw successfully. You need to add your upfront payment to keep your files on the Network or download them', null));
+}
 
 // Detach Usage:
 // obn consumer create -d -n MyConsumer -t BASIC
@@ -269,6 +313,17 @@ commander.command('download').description('Download a file')
             : downloadPromptP();
         return action
             .catch((error) => logConsoleP('Upload file error:\n', error));
+    });
+
+commander.command('withdraw').description('Withdraw from a Consumer contract')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-c, --consumer-id <number>', 'Specify Consumer id', Number)
+    .action(({detach, consumerId}) => {
+        const action = detach
+            ? withdrawP(consumerId)
+            : withdrawPromptP();
+        return action
+            .catch(({message}) => logConsoleP('Withdraw error:\n', message));
     });
 
 commander.parse(process.argv);
