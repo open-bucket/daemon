@@ -174,6 +174,14 @@ async function downloadP({fileId, consumerId, downloadPath}) {
         wsClient.close();
     }
 
+    async function handleDownloadFileDeny(message) {
+        console.log('Download request has been denied');
+        console.log(`Reason: ${message}`);
+
+        console.log('Closing connection to Tracker...');
+        wsClient.close();
+    }
+
     async function handleDownloadFileInfo({name: fileName, shards}) {
         console.log('Downloading...');
         console.log('> Do NOT modify the consumer space');
@@ -182,7 +190,7 @@ async function downloadP({fileId, consumerId, downloadPath}) {
             WebTorrentClient.addP(magnetURI, {filePath: join(space, name)})));
 
         function getPartNumber(name) {
-            const matches = name.match(/part-(\d)$/);
+            const matches = name.match(/part-(\d+)$/);
             return Number(matches[1]);
         }
 
@@ -229,6 +237,12 @@ async function downloadP({fileId, consumerId, downloadPath}) {
                 .then(() => log('Handled CONSUMER_DOWNLOAD_FILE_DONE', payload))
                 .catch(log('Error occurred while handling CONSUMER_DOWNLOAD_FILE_DONE'));
         }
+
+        if (action === WS_ACTIONS.CONSUMER_DOWNLOAD_FILE_DENY) {
+            handleDownloadFileDeny(payload)
+                .then(() => log('Handled CONSUMER_DOWNLOAD_FILE_DENY', payload))
+                .catch(log('Error occurred while handling CONSUMER_DOWNLOAD_FILE_DENY'));
+        }
     }
 
     function handleClose(code) {
@@ -255,6 +269,11 @@ async function downloadP({fileId, consumerId, downloadPath}) {
 }
 
 
+async function withdrawP(consumerId) {
+    const {address, contractAddress} = await getConsumerP(consumerId);
+    return ContractService.withdrawFromConsumerContract(contractAddress, address);
+}
+
 module.exports = {
     createConsumerP,
     getAllConsumersP,
@@ -263,5 +282,6 @@ module.exports = {
     updateConsumerP,
     uploadP,
     downloadP,
+    withdrawP,
     createConsumerActivationP
 };

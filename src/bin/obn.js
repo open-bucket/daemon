@@ -62,7 +62,8 @@ commander.command('register').description('Register an account on OBN Tracker')
 // Register sub-commands
 commander
     .command('consumer', 'Consumer functionality')
-    .command('producer', 'Producer functionality');
+    .command('producer', 'Producer functionality')
+    .command('wallet', 'Wallet functionality');
 
 commander.parse(process.argv);
 

@@ -21,8 +21,12 @@ const WebTorrentClient = require('./webtorrent-client');
 // eslint-disable-next-line no-unused-vars
 const log = createDebugLogger('producer');
 
-function getProducersP() {
+function getAllProducersP() {
     return api.get({url: '/producers', token: CM.configs.authToken});
+}
+
+function getProducerP(id) {
+    return api.get({url: `/producers/${id}`, token: CM.configs.authToken});
 }
 
 async function createProducerP({spacePath = OBN_SPACES_PATH, spaceLimit = '5 GB', name}) {
@@ -82,6 +86,14 @@ async function startProducerP(producerId) {
         console.log(`Shard ${shardId} order confirmation has been accepted, serving it...`);
     }
 
+    async function handleProducerServeFileDone({consumerContractAddress, shards}) {
+        for (let {name} of shards) {
+            console.log(`Shard ${name} has been served successfully`);
+        }
+        console.log(`> Your payment is available at Consumer contract: ${consumerContractAddress}`);
+        console.log('> You can call withdraw() using your registered producer address to withdraw them');
+    }
+
     async function handleProducerShardOrderDeny({id: shardId, name, magnetURI}) {
         console.log(`Shard ${shardId} order confirmation has been denied, cleanup`);
 
@@ -114,6 +126,12 @@ async function startProducerP(producerId) {
                 .then(() => log('Handled PRODUCER_SHARD_ORDER_DENY', payload))
                 .catch(log('Error occurred while handling PRODUCER_SHARD_ORDER'));
         }
+
+        if (action === WS_ACTIONS.PRODUCER_SERVE_FILE_DONE) {
+            handleProducerServeFileDone(payload)
+                .then(() => log('Handled PRODUCER_SERVE_FILE_DONE', payload))
+                .catch(log('Error occurred while handling PRODUCER_SERVE_FILE_DONE'));
+        }
     }
 
     function handleClose(code) {
@@ -141,9 +159,15 @@ async function startProducerP(producerId) {
     console.log(`Producer ${producerId} has been started`);
 }
 
+async function withdrawP(producerId, contractAddress) {
+    const {address} = await getProducerP(producerId);
+    return ContractService.withdrawFromConsumerContract(contractAddress, address);
+}
+
 module.exports = {
     createProducerP,
-    getProducersP,
+    getAllProducersP,
     createProducerActivationP,
-    startProducerP
+    startProducerP,
+    withdrawP
 };
