@@ -1,4 +1,4 @@
-# Open Bucket Daemon
+# OBN Daemon
 Open Bucket Daemon
 
 For more information about the Open Bucket network, refer to: https://github.com/open-bucket/blueprint
