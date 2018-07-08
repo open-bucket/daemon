@@ -5,7 +5,7 @@ For more information about the Open Bucket network, refer to: https://github.com
 
 ## Installation
 ```bash
-npm install @open-bucket/daemon
+npm install -g @open-bucket/daemon
 ```
 
 ## Usage
