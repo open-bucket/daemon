@@ -80,6 +80,12 @@ function _prepareFileP({filePath, key, space}) {
 }
 
 async function uploadP({filePath, consumerId}) {
+    let resolve, reject;
+    const uploadTask = new Promise((rs, rj)=>{
+        resolve = rs;
+        reject = rj;
+    });
+
     async function handleNewProducerAccepted({fileId, shardId, producerId, currentAv}) {
         log(`Producer ${producerId} is now serving shard ${shardId} your file`, null);
         log(`File ${fileId} current availability: `, currentAv, null);
@@ -95,6 +101,7 @@ async function uploadP({filePath, consumerId}) {
         console.log('Deleted temporary shards in Consumer space');
 
         wsClient.close();
+        resolve();
     }
 
     function handleMessage(rawMessage) {
@@ -120,6 +127,7 @@ async function uploadP({filePath, consumerId}) {
 
     function handleError(error) {
         console.log('wsClient error with error', error);
+        reject();
     }
 
     console.log('Preparing...');
@@ -160,6 +168,8 @@ async function uploadP({filePath, consumerId}) {
     console.log('Uploading...');
     console.log('> Do NOT modify the consumer space');
     wsClient.send(JSON.stringify(message));
+
+    await uploadTask;
 }
 
 async function downloadP({fileId, consumerId, downloadPath}) {
