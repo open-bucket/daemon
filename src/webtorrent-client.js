@@ -60,7 +60,10 @@ class WebTorrentClient {
     destroyP() {
         if (this._client) {
             return new BPromise(resolve => {
-                this._client.destroy(resolve);
+                this._client.destroy(()=>{                    
+                    this._client = null;
+                    resolve();
+                });
             });
         }
     }
