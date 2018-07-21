@@ -79,7 +79,7 @@ function _prepareFileP({filePath, key, space}) {
     return splitToDiskP(encryptedFileStream, PART_SIZE, filePathInConsumerSpace);
 }
 
-async function uploadP({filePath, consumerId}) {
+async function uploadP({filePath, consumerId, keepAlive = false}) {
     let resolve, reject;
     const uploadTask = new Promise((rs, rj)=>{
         resolve = rs;
@@ -122,7 +122,7 @@ async function uploadP({filePath, consumerId}) {
 
     function handleClose(code) {
         console.log('Connection with Tracker has been closed with code', code);
-        WebTorrentClient.destroyP();
+        if(!keepAlive) WebTorrentClient.destroyP();
     }
 
     function handleError(error) {
@@ -172,7 +172,12 @@ async function uploadP({filePath, consumerId}) {
     await uploadTask;
 }
 
-async function downloadP({fileId, consumerId, downloadPath}) {
+async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) {
+    let resolve, reject;
+    const downloadTask = new Promise((rs, rj)=>{
+        resolve = rs;
+        reject = rj;
+    });
 
     async function handleDownloadFileDone({name, shards}) {
         console.log(`File ${name} has been downloaded to ${downloadPath}`);
@@ -182,6 +187,7 @@ async function downloadP({fileId, consumerId, downloadPath}) {
         console.log('Deleted temporary shards in Consumer space');
 
         wsClient.close();
+        resolve();
     }
 
     async function handleDownloadFileDeny(message) {
@@ -190,6 +196,7 @@ async function downloadP({fileId, consumerId, downloadPath}) {
 
         console.log('Closing connection to Tracker...');
         wsClient.close();
+        reject();
     }
 
     async function handleDownloadFileInfo({name: fileName, shards}) {
@@ -257,11 +264,12 @@ async function downloadP({fileId, consumerId, downloadPath}) {
 
     function handleClose(code) {
         console.log('Connection with Tracker has been closed with code', code);
-        WebTorrentClient.destroyP();
+        if(!keepAlive) WebTorrentClient.destroyP();
     }
 
     function handleError(error) {
         console.log('wsClient error with error', error);
+        reject();
     }
 
     const {key, space} = await CM.readConsumerConfigFileP(consumerId);
@@ -276,6 +284,8 @@ async function downloadP({fileId, consumerId, downloadPath}) {
         payload: {fileId}
     };
     wsClient.send(JSON.stringify(message));
+    
+    await downloadTask;
 }
 
 
