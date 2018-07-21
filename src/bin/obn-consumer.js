@@ -20,7 +20,8 @@ const {
     createConsumerActivationP,
     uploadP,
     downloadP,
-    withdrawP
+    withdrawP,
+    deleteFileP
 } = require('../consumer');
 const {logConsoleP} = require('../utils');
 const {promptHeaderP, prompt} = require('../core/prompt');
@@ -211,6 +212,51 @@ async function downloadPromptP() {
     return downloadP({consumerId, fileId, downloadPath});
 }
 
+async function deleteFilePromptP() {
+
+    function chooseActiveConsumerPrompt(consumers) {
+        const questions = [{
+            type: 'list',
+            name: 'consumerId',
+            message: 'Choose a Consumer to delete file from',
+            choices: sort((a, b) => a.id - b.id)(consumers)
+                .map(consumer => ({
+                    name: `${consumer.id} ${consumer.name}`,
+                    disabled: consumer.state === CONSUMER_STATES.INACTIVE && 'Inactive'
+                })),
+            filter: compose(Number, head, split(' '))
+        }];
+
+        return prompt(questions);
+    }
+
+    function chooseFilePrompt(files) {
+        const questions = [{
+            type: 'list',
+            name: 'fileId',
+            message: 'Choose a File to delete',
+            choices: sort((a, b) => a.id - b.id)(files)
+                .map(file => ({
+                    name: `${file.id} ${file.name}`
+                })),
+            filter: compose(Number, head, split(' '))
+        }];
+
+        return prompt(questions);
+    }
+
+    console.log('---------Delete file---------');
+    const {consumerId} = await logConsoleP('Loading your consumers...', null)
+        .then(getAllConsumersP)
+        .then(chooseActiveConsumerPrompt);
+
+    const {fileId} = await logConsoleP('Loading you files', null)
+        .then(() => getConsumerFileP(consumerId))
+        .then(chooseFilePrompt);
+
+    return deleteFileP({consumerId, fileId});
+}
+
 async function withdrawPromptP() {
     function chooseActiveConsumerPrompt(consumers) {
         const question = [
@@ -312,7 +358,7 @@ commander.command('download').description('Download a file')
             ? downloadP({fileId, consumerId, downloadPath})
             : downloadPromptP();
         return action
-            .catch((error) => logConsoleP('Upload file error:\n', error));
+            .catch((error) => logConsoleP('Download file error:\n', error));
     });
 
 commander.command('withdraw').description('Withdraw from a Consumer contract')
@@ -324,6 +370,18 @@ commander.command('withdraw').description('Withdraw from a Consumer contract')
             : withdrawPromptP();
         return action
             .catch(({message}) => logConsoleP('Withdraw error:\n', message));
+    });
+
+commander.command('deleteFile').description('Delete a file')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-c, --consumer-id <number>', 'Specify Consumer id', Number)
+    .option('-f, --file-id <number>', 'Specify File id', Number)
+    .action(({detach, fileId, consumerId}) => {
+        const action = detach
+            ? deleteFileP({consumerId, fileId})
+            : deleteFilePromptP();
+        return action
+            .catch((error) => logConsoleP('Download file error:\n', error));
     });
 
 commander.parse(process.argv);

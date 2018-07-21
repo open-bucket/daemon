@@ -81,7 +81,7 @@ function _prepareFileP({filePath, key, space}) {
 
 async function uploadP({filePath, consumerId, keepAlive = false}) {
     let resolve, reject;
-    const uploadTask = new Promise((rs, rj)=>{
+    const uploadTask = new Promise((rs, rj) => {
         resolve = rs;
         reject = rj;
     });
@@ -122,7 +122,7 @@ async function uploadP({filePath, consumerId, keepAlive = false}) {
 
     function handleClose(code) {
         console.log('Connection with Tracker has been closed with code', code);
-        if(!keepAlive) WebTorrentClient.destroyP();
+        if (!keepAlive) WebTorrentClient.destroyP();
     }
 
     function handleError(error) {
@@ -174,7 +174,7 @@ async function uploadP({filePath, consumerId, keepAlive = false}) {
 
 async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) {
     let resolve, reject;
-    const downloadTask = new Promise((rs, rj)=>{
+    const downloadTask = new Promise((rs, rj) => {
         resolve = rs;
         reject = rj;
     });
@@ -192,11 +192,9 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
 
     async function handleDownloadFileDeny(message) {
         console.log('Download request has been denied');
-        console.log(`Reason: ${message}`);
-
         console.log('Closing connection to Tracker...');
         wsClient.close();
-        reject();
+        reject(message);
     }
 
     async function handleDownloadFileInfo({name: fileName, shards}) {
@@ -264,7 +262,7 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
 
     function handleClose(code) {
         console.log('Connection with Tracker has been closed with code', code);
-        if(!keepAlive) WebTorrentClient.destroyP();
+        if (!keepAlive) WebTorrentClient.destroyP();
     }
 
     function handleError(error) {
@@ -284,14 +282,17 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
         payload: {fileId}
     };
     wsClient.send(JSON.stringify(message));
-    
+
     await downloadTask;
 }
-
 
 async function withdrawP(consumerId) {
     const {address, contractAddress} = await getConsumerP(consumerId);
     return ContractService.withdrawFromConsumerContract(contractAddress, address);
+}
+
+function deleteFileP({consumerId, fileId}) {
+    return api.del({url: `/consumers/${consumerId}/files/${fileId}`, token: CM.configs.authToken});
 }
 
 module.exports = {
@@ -303,5 +304,6 @@ module.exports = {
     uploadP,
     downloadP,
     withdrawP,
-    createConsumerActivationP
+    createConsumerActivationP,
+    deleteFileP
 };
