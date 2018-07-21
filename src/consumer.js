@@ -99,7 +99,10 @@ async function uploadP({filePath, consumerId, keepAlive = false}) {
         console.log('Cleaning up resources..');
         await BPromise.all(shards.map(s => SM.removeConsumerFileP(consumerId, s.name)));
         console.log('Deleted temporary shards in Consumer space');
-
+        await BPromise.all(shards.map(({name, magnetURI}) =>
+            WebTorrentClient.removeP(magnetURI, {filePath: join(space, name)})));
+        console.log('Deleted torrents in Torrent Client');
+        
         wsClient.close();
         resolve();
     }
@@ -185,7 +188,9 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
         console.log('Cleaning up resources..');
         await BPromise.all(shards.map(s => SM.removeConsumerFileP(consumerId, s.name)));
         console.log('Deleted temporary shards in Consumer space');
-
+        await BPromise.all(shards.map(({name, magnetURI}) =>
+            WebTorrentClient.removeP(magnetURI, {filePath: join(space, name)})));
+        console.log('Deleted torrents in Torrent Client');
         wsClient.close();
         resolve();
     }
