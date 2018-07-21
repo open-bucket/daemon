@@ -92,11 +92,23 @@ async function startProducerP(producerId, keepAlive = false) {
             console.log(`Shard ${name} has been served successfully`);
         }
         console.log(`> Your payment is available at Consumer contract: ${consumerContractAddress}`);
-        console.log('> You can call withdraw() using your registered producer address to withdraw them');
+        console.log('> You can use `obn producer withdraw` to withdraw them');
     }
 
     async function handleProducerShardOrderDeny({id: shardId, name, magnetURI}) {
         console.log(`Shard ${shardId} order confirmation has been denied, cleanup`);
+
+        // Delete the file on producer space
+        await SM.removeProducerFileP(producerId, name);
+        console.log(`Removed ${name} from Producer space`);
+
+        // Delete shard on torrent
+        await WebTorrentClient.removeP(magnetURI);
+        console.log('Removed torrent');
+    }
+
+    async function handleProducerDeleteShard({id: shardId, name, magnetURI}) {
+        console.log(`Shard ${shardId} is no longer need to be served, cleanup`);
 
         // Delete the file on producer space
         await SM.removeProducerFileP(producerId, name);
@@ -132,6 +144,12 @@ async function startProducerP(producerId, keepAlive = false) {
             handleProducerServeFileDone(payload)
                 .then(() => log('Handled PRODUCER_SERVE_FILE_DONE', payload))
                 .catch(log('Error occurred while handling PRODUCER_SERVE_FILE_DONE'));
+        }
+
+        if (action === WS_ACTIONS.PRODUCER_DELETE_SHARD) {
+            handleProducerDeleteShard(payload)
+                .then(() => log('Handled PRODUCER_DELETE_SHARD', payload))
+                .catch(log('Error occurred while handling PRODUCER_DELETE_SHARD'));
         }
     }
 

@@ -192,11 +192,9 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
 
     async function handleDownloadFileDeny(message) {
         console.log('Download request has been denied');
-        console.log(`Reason: ${message}`);
-
         console.log('Closing connection to Tracker...');
         wsClient.close();
-        reject();
+        reject(message);
     }
 
     async function handleDownloadFileInfo({name: fileName, shards}) {
@@ -288,10 +286,13 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
     await downloadTask;
 }
 
-
 async function withdrawP(consumerId) {
     const {address, contractAddress} = await getConsumerP(consumerId);
     return ContractService.withdrawFromConsumerContract(contractAddress, address);
+}
+
+function deleteFileP({consumerId, fileId}) {
+    return api.del({url: `/consumers/${consumerId}/files/${fileId}`, token: CM.configs.authToken});
 }
 
 module.exports = {
@@ -303,5 +304,6 @@ module.exports = {
     uploadP,
     downloadP,
     withdrawP,
-    createConsumerActivationP
+    createConsumerActivationP,
+    deleteFileP
 };

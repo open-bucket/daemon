@@ -39,12 +39,17 @@ function get(params) {
     return send({...params, method: 'GET'});
 }
 
-function put(params) { 
-    return send({...params, method: 'PUT'}); 
-} 
+function put(params) {
+    return send({...params, method: 'PUT'});
+}
+
+function del(params) {
+    return send({...params, method: 'DELETE'});
+}
 
 module.exports = {
     post,
     get,
-    put
+    put,
+    del
 };
