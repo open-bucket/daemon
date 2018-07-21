@@ -81,7 +81,7 @@ function _prepareFileP({filePath, key, space}) {
 
 async function uploadP({filePath, consumerId, keepAlive = false}) {
     let resolve, reject;
-    const uploadTask = new Promise((rs, rj)=>{
+    const uploadTask = new Promise((rs, rj) => {
         resolve = rs;
         reject = rj;
     });
@@ -122,7 +122,7 @@ async function uploadP({filePath, consumerId, keepAlive = false}) {
 
     function handleClose(code) {
         console.log('Connection with Tracker has been closed with code', code);
-        if(!keepAlive) WebTorrentClient.destroyP();
+        if (!keepAlive) WebTorrentClient.destroyP();
     }
 
     function handleError(error) {
@@ -174,7 +174,7 @@ async function uploadP({filePath, consumerId, keepAlive = false}) {
 
 async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) {
     let resolve, reject;
-    const downloadTask = new Promise((rs, rj)=>{
+    const downloadTask = new Promise((rs, rj) => {
         resolve = rs;
         reject = rj;
     });
@@ -264,7 +264,7 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
 
     function handleClose(code) {
         console.log('Connection with Tracker has been closed with code', code);
-        if(!keepAlive) WebTorrentClient.destroyP();
+        if (!keepAlive) WebTorrentClient.destroyP();
     }
 
     function handleError(error) {
@@ -284,7 +284,7 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
         payload: {fileId}
     };
     wsClient.send(JSON.stringify(message));
-    
+
     await downloadTask;
 }
 
