@@ -97,9 +97,12 @@ async function uploadP({filePath, consumerId, keepAlive = false}) {
         console.log('> It is now being uploaded by the producers themselves to increase the availability');
 
         console.log('Cleaning up resources..');
-        await BPromise.all(shards.map(s => SM.removeConsumerFileP(consumerId, s.name)));
+        await BPromise.map(shards,s => SM.removeConsumerFileP(consumerId, s.name));
         console.log('Deleted temporary shards in Consumer space');
-
+        await BPromise.map(shards,({ magnetURI}) =>
+            WebTorrentClient.removeP(magnetURI));
+        console.log('Deleted torrents in Torrent Client');
+        
         wsClient.close();
         resolve();
     }
@@ -134,7 +137,7 @@ async function uploadP({filePath, consumerId, keepAlive = false}) {
     console.log('> Do NOT open/modify the file');
     const {key, space} = await CM.readConsumerConfigFileP(consumerId);
     const shardPaths = await _prepareFileP({filePath, key, space});
-    const shardsInfo = await BPromise.all(shardPaths.map(path =>
+    const shardsInfo = await BPromise.map(shardPaths, path =>
         BPromise.all([
             statP(path).then(prop('size')),
             fileToHashP(path),
@@ -142,7 +145,7 @@ async function uploadP({filePath, consumerId, keepAlive = false}) {
                 stream: createReadStream(path),
                 name: basename(path)
             }).then(prop('magnetURI'))]
-        )));
+        ));
 
     const wsClient = await connectConsumerP(consumerId);
     wsClient.on('message', handleMessage)
@@ -183,9 +186,11 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
         console.log(`File ${name} has been downloaded to ${downloadPath}`);
 
         console.log('Cleaning up resources..');
-        await BPromise.all(shards.map(s => SM.removeConsumerFileP(consumerId, s.name)));
+        await BPromise.map(shards,s => SM.removeConsumerFileP(consumerId, s.name));
         console.log('Deleted temporary shards in Consumer space');
-
+        await BPromise.map(shards,({magnetURI}) =>
+            WebTorrentClient.removeP(magnetURI));
+        console.log('Deleted torrents in Torrent Client');
         wsClient.close();
         resolve();
     }
@@ -201,8 +206,8 @@ async function downloadP({fileId, consumerId, downloadPath, keepAlive = false}) 
         console.log('Downloading...');
         console.log('> Do NOT modify the consumer space');
         // Add torrents & download all the files
-        const shardPaths = await BPromise.all(shards.map(({name, magnetURI}) =>
-            WebTorrentClient.addP(magnetURI, {filePath: join(space, name)})));
+        const shardPaths = await BPromise.map(shards,({name, magnetURI}) =>
+            WebTorrentClient.addP(magnetURI, {filePath: join(space, name)}));
 
         function getPartNumber(name) {
             const matches = name.match(/part-(\d+)$/);
