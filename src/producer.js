@@ -195,10 +195,16 @@ async function withdrawP(producerId, contractAddress) {
     return ContractService.withdrawFromConsumerContract(contractAddress, address);
 }
 
+async function getBalanceP(producerId) {
+    const {address} = await getProducerP(producerId);
+    return ContractService.web3.eth.getBalance(address);
+}
+
 module.exports = {
     createProducerP,
     getAllProducersP,
     createProducerActivationP,
     startProducerP,
-    withdrawP
+    withdrawP,
+    getBalanceP
 };

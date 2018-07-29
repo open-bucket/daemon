@@ -16,7 +16,8 @@ const {
     getAllProducersP,
     createProducerActivationP,
     startProducerP,
-    withdrawP
+    withdrawP,
+    getBalanceP
 } = require('../producer');
 const {OBN_SPACES_PATH} = require('../constants');
 const {PRODUCER_STATES} = require('../enums');
@@ -186,6 +187,32 @@ async function withdrawPromptP() {
             .then(() => logConsoleP('Withdraw successfully', null));
 }
 
+async function getBalancePromptP() {
+    function chooseActiveProducerPrompt(producers) {
+        const question = [
+            {
+                type: 'list',
+                name: 'producerId',
+                message: 'Choose a Producer',
+                choices: sort((a, b) => a.id - b.id)(producers)
+                    .map(producer => ({
+                        name: `${producer.id} ${producer.name}`,
+                        disabled: producer.state === PRODUCER_STATES.INACTIVE && 'Inactive'
+                    })),
+                filter: compose(Number, head, split(' '))
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    console.log('---------Get Balance---------');
+    const producers = await getAllProducersP();
+    const {producerId} = await chooseActiveProducerPrompt(producers);
+
+    return getBalanceP(producerId);
+}
+
 commander.command('create').description('Create new Producer with specified configs')
     .option('-d, --detach', 'Disable interactive mode')
     .option('-n, --name <string>', 'Specify Producer name', generateName())
@@ -239,6 +266,18 @@ commander.command('withdraw').description('Withdraw from a Consumer contract')
             : withdrawPromptP();
         return action
             .catch(({message}) => logConsoleP('Withdraw error:\n', message));
+    });
+
+commander.command('getBalance').description('Get Balance of a producer')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-p, --producer-id <number>', 'Specify Producer id', Number)
+    .action(({detach, producerId}) => {
+        const action = detach
+            ? getBalanceP(producerId)
+            : getBalancePromptP();
+        return action
+            .then((balance) => logConsoleP('Your current producer balance:', balance.toString()))
+            .catch(({message}) => logConsoleP('Get Balance error:\n', message));
     });
 
 commander.parse(process.argv);
