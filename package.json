@@ -1,6 +1,6 @@
 {
   "name": "@open-bucket/daemon",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "The Deamon provides core functionality to Open Bucket network",
   "main": "./dist/index.js",
   "bin": {
