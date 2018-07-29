@@ -21,7 +21,8 @@ const {
     uploadP,
     downloadP,
     withdrawP,
-    deleteFileP
+    deleteFileP,
+    getBalanceP
 } = require('../consumer');
 const {logConsoleP} = require('../utils');
 const {promptHeaderP, prompt} = require('../core/prompt');
@@ -301,6 +302,33 @@ async function withdrawPromptP() {
             .then(() => logConsoleP('Withdraw successfully. You need to add your upfront payment to keep your files on the Network or download them', null));
 }
 
+async function getBalancePromptP() {
+    function chooseActiveConsumerAddress(consumers) {
+        const question = [
+            {
+                type: 'list',
+                name: 'consumerId',
+                message: 'Choose a Consumer',
+                choices: sort((a, b) => a.id - b.id)(consumers)
+                    .map(consumer => ({
+                        name: `${consumer.id} ${consumer.name}`,
+                        disabled: consumer.state === CONSUMER_STATES.INACTIVE && 'Inactive'
+                    })),
+                filter: compose(Number, head, split(' '))
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    console.log('---------Get Balance---------');
+    const consumer = await getAllConsumersP();
+    const {consumerId} = await chooseActiveConsumerAddress(consumer);
+
+    return getBalanceP(consumerId);
+}
+
+
 // Detach Usage:
 // obn consumer create -d -n MyConsumer -t BASIC
 commander.command('create').description('Create new Consumer with specified configs')
@@ -383,5 +411,19 @@ commander.command('deleteFile').description('Delete a file')
         return action
             .catch((error) => logConsoleP('Download file error:\n', error));
     });
+
+
+commander.command('getBalance').description('Get Balance of a consumer')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-p, --consumer-id <number>', 'Specify Consumer id', Number)
+    .action(({detach, consumerId}) => {
+        const action = detach
+            ? getBalanceP(consumerId)
+            : getBalancePromptP();
+        return action
+            .then((balance) => logConsoleP('Your current consumer balance:', balance.toString()))
+            .catch(({message}) => logConsoleP('Get Balance error:\n', message));
+    });
+
 
 commander.parse(process.argv);

@@ -300,6 +300,11 @@ function deleteFileP({consumerId, fileId}) {
     return api.del({url: `/consumers/${consumerId}/files/${fileId}`, token: CM.configs.authToken});
 }
 
+async function getBalanceP(consumerId) {
+    const {address} = await getConsumerP(consumerId);
+    return ContractService.web3.eth.getBalance(address);
+}
+
 module.exports = {
     createConsumerP,
     getAllConsumersP,
@@ -310,5 +315,6 @@ module.exports = {
     downloadP,
     withdrawP,
     createConsumerActivationP,
-    deleteFileP
+    deleteFileP,
+    getBalanceP
 };
