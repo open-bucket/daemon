@@ -46,6 +46,8 @@ class SpaceManager {
         const spaceLimit = bytes.parse(rawSpaceLimit);
 
         return {
+            spaceLimit,
+            actualSize,
             availableSpace: spaceLimit - actualSize,
         };
     }
