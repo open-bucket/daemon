@@ -300,6 +300,21 @@ async function getBalanceP(consumerId) {
     return ContractService.web3.eth.getBalance(address);
 }
 
+async function topUpP(consumerId, value) {
+    const {contractAddress, address} = await getConsumerP(consumerId);
+    return ContractService.topUpConsumerContract(contractAddress, address, value);
+}
+
+async function getBalanceInConsumerContractP(consumerId) {
+    const {address, consumerAddress} = await getConsumerP(consumerId);
+    return ContractService.getConsumerContractActualBalanceP(consumerAddress, address);
+}
+
+async function getConsumerContractDataP(consumerId) {
+    const {contractAddress} = await getConsumerP(consumerId);
+    return ContractService.getConsumerContractDataP(contractAddress);
+}
+
 module.exports = {
     createConsumerP,
     getAllConsumersP,
@@ -311,5 +326,8 @@ module.exports = {
     withdrawP,
     createConsumerActivationP,
     deleteFileP,
-    getBalanceP
+    getBalanceP,
+    topUpP,
+    getBalanceInConsumerContractP,
+    getConsumerContractDataP
 };

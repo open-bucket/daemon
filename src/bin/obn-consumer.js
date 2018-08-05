@@ -22,7 +22,9 @@ const {
     downloadP,
     withdrawP,
     deleteFileP,
-    getBalanceP
+    getBalanceP,
+    topUpP,
+    getBalanceInConsumerContractP
 } = require('../consumer');
 const {logConsoleP} = require('../utils');
 const {promptHeaderP, prompt} = require('../core/prompt');
@@ -328,6 +330,38 @@ async function getBalancePromptP() {
     return getBalanceP(consumerId);
 }
 
+async function topUpPromptP() {
+    function promptActiveConsumerAndValue(consumers) {
+        const question = [
+            {
+                type: 'list',
+                name: 'consumerId',
+                message: 'Choose a Consumer',
+                choices: sort((a, b) => a.id - b.id)(consumers)
+                    .map(consumer => ({
+                        name: `${consumer.id} ${consumer.name}`,
+                        disabled: consumer.state === CONSUMER_STATES.INACTIVE && 'Inactive'
+                    })),
+                filter: compose(Number, head, split(' '))
+            },
+            {
+                type: 'input',
+                name: 'value',
+                message: 'Input your top up value in Wei',
+                default: ContractService.configs.CONSUMER_ACTIVATOR_MIN_AMOUNT
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    console.log('---------Top up---------');
+    const consumers = await getAllConsumersP();
+    const {consumerId, value} = await promptActiveConsumerAndValue(consumers);
+
+    return topUpP(consumerId, value);
+}
+
 
 // Detach Usage:
 // obn consumer create -d -n MyConsumer -t BASIC
@@ -425,5 +459,18 @@ commander.command('getBalance').description('Get Balance of a consumer')
             .catch(({message}) => logConsoleP('Get Balance error:\n', message));
     });
 
+commander.command('topUp').description('Top up consumer balance in Consumer Contract')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-p, --consumer-id <number>', 'Specify Consumer id', Number)
+    .option('-v, --value <number>', 'Specify Value to top up', Number)
+    .action(({detach, consumerId, value}) => {
+        const action = detach
+            ? topUpP(consumerId, value)
+            : topUpPromptP();
+        return action
+            .then(getBalanceInConsumerContractP)
+            .then((balance) => logConsoleP('Top up successfully. Your current balance in consumer contract:', balance))
+            .catch(({message}) => logConsoleP('Top up error:\n', message));
+    });
 
 commander.parse(process.argv);
