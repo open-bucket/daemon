@@ -53,6 +53,10 @@ function createProducerActivationP({producerId, accountIndex}) {
     return ContractService.createProducerActivationP({producerId, accountIndex});
 }
 
+function updateProducerP(producer) {
+    return api.put({url: `/producers/${producer.id}`, body: producer, token: CM.configs.authToken});
+}
+
 async function startProducerP(producerId, keepAlive = false) {
 
     async function reportSpaceStatsP() {
@@ -204,6 +208,7 @@ module.exports = {
     createProducerP,
     getAllProducersP,
     createProducerActivationP,
+    updateProducerP,
     startProducerP,
     withdrawP,
     getBalanceP
