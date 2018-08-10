@@ -26,7 +26,7 @@
   "author": "open-bucket",
   "license": "MIT",
   "dependencies": {
-    "@open-bucket/contracts": "file:../contracts",
+    "@open-bucket/contracts": "0.0.16",
     "axios": "^0.18.0",
     "bignumber.js": "^7.2.1",
     "bluebird": "^3.5.1",

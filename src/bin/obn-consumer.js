@@ -330,6 +330,32 @@ async function getBalancePromptP() {
     return getBalanceP(consumerId);
 }
 
+async function getConsumerBalancePromptP() {
+    function chooseActiveConsumerAddress(consumers) {
+        const question = [
+            {
+                type: 'list',
+                name: 'consumerId',
+                message: 'Choose a Consumer',
+                choices: sort((a, b) => a.id - b.id)(consumers)
+                    .map(consumer => ({
+                        name: `${consumer.id} ${consumer.name}`,
+                        disabled: consumer.state === CONSUMER_STATES.INACTIVE && 'Inactive'
+                    })),
+                filter: compose(Number, head, split(' '))
+            }
+        ];
+
+        return prompt(question);
+    }
+
+    console.log('---------Get Consumer Balance---------');
+    const consumer = await getAllConsumersP();
+    const {consumerId} = await chooseActiveConsumerAddress(consumer);
+
+    return getBalanceInConsumerContractP(consumerId);
+}
+
 async function topUpPromptP() {
     function promptActiveConsumerAndValue(consumers) {
         const question = [
@@ -459,6 +485,18 @@ commander.command('getBalance').description('Get Balance of a consumer')
             .catch(({message}) => logConsoleP('Get Balance error:\n', message));
     });
 
+commander.command('getConsumerBalance').description('Get Consumer Contract Balance of a consumer')
+    .option('-d, --detach', 'Disable interactive mode')
+    .option('-p, --consumer-id <number>', 'Specify Consumer id', Number)
+    .action(({detach, consumerId}) => {
+        const action = detach
+            ? getBalanceInConsumerContractP(consumerId)
+            : getConsumerBalancePromptP();
+        return action
+            .then((balance) => logConsoleP('Your current consumer balance in consumer contract:', balance.toString()))
+            .catch(({message}) => logConsoleP('Get Consumer Balance error:\n', message));
+    });
+
 commander.command('topUp').description('Top up consumer balance in Consumer Contract')
     .option('-d, --detach', 'Disable interactive mode')
     .option('-p, --consumer-id <number>', 'Specify Consumer id', Number)
@@ -468,8 +506,7 @@ commander.command('topUp').description('Top up consumer balance in Consumer Cont
             ? topUpP(consumerId, value)
             : topUpPromptP();
         return action
-            .then(getBalanceInConsumerContractP)
-            .then((balance) => logConsoleP('Top up successfully. Your current balance in consumer contract:', balance))
+            .then(() => logConsoleP('Top up successfully', null))
             .catch(({message}) => logConsoleP('Top up error:\n', message));
     });
 

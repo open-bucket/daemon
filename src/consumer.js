@@ -306,8 +306,8 @@ async function topUpP(consumerId, value) {
 }
 
 async function getBalanceInConsumerContractP(consumerId) {
-    const {address, consumerAddress} = await getConsumerP(consumerId);
-    return ContractService.getConsumerContractActualBalanceP(consumerAddress, address);
+    const {contractAddress, address} = await getConsumerP(consumerId);
+    return ContractService.getConsumerContractActualBalanceP(contractAddress, address);
 }
 
 async function getConsumerContractDataP(consumerId) {
