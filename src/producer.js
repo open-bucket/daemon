@@ -25,6 +25,10 @@ function getAllProducersP() {
     return api.get({url: '/producers', token: CM.configs.authToken});
 }
 
+function getConnectedProducersP() {
+    return api.get({url: '/producers/connected', token: CM.configs.authToken});
+}
+
 function getProducerP(id) {
     return api.get({url: `/producers/${id}`, token: CM.configs.authToken});
 }
@@ -207,6 +211,7 @@ async function getBalanceP(producerId) {
 module.exports = {
     createProducerP,
     getAllProducersP,
+    getConnectedProducersP,
     createProducerActivationP,
     updateProducerP,
     startProducerP,

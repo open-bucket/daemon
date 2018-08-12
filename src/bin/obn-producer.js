@@ -14,6 +14,7 @@ const bytes = require('bytes');
 const {
     createProducerP,
     getAllProducersP,
+    getConnectedProducersP,
     createProducerActivationP,
     startProducerP,
     withdrawP,
@@ -110,19 +111,28 @@ async function createProducerActivationPromptP() {
     });
 }
 
-function startProducerPromptP() {
+async function startProducerPromptP() {
 
-    function createChooseActivatedProducerPromptP(producers) {
+    function createChooseActivatedProducerPromptP(producers, connectedProducers) {
         const question = [
             {
                 type: 'list',
                 name: 'producerId',
                 message: 'Choose a Producer to start',
                 choices: sort((a, b) => a.id - b.id)(producers)
-                    .map(consumer => ({
-                        name: `${consumer.id} ${consumer.name}`,
-                        disabled: consumer.state === PRODUCER_STATES.INACTIVE && 'Inactive'
-                    })),
+                    .map(producer => {
+                        let disabled;
+                        if (producer.state === PRODUCER_STATES.INACTIVE) {
+                            disabled = 'Inactive';
+                        } else if (connectedProducers.find(cp => cp.id === producer.id)) {
+                            disabled = 'Connected';
+                        }
+
+                        return ({
+                            name: `${producer.id} ${producer.name}`,
+                            disabled
+                        });
+                    }),
                 filter: compose(Number, head, split(' ')) // get producerId
             }
         ];
@@ -131,10 +141,13 @@ function startProducerPromptP() {
     }
 
     console.log('---------Start Producer---------');
-    return logConsoleP('Loading your producers...', null)
-        .then(getAllProducersP)
-        .then(createChooseActivatedProducerPromptP)
-        .then(({producerId}) => startProducerP(producerId));
+    console.log('Loading your producers...');
+    const allProducers = await getAllProducersP();
+    const connectedProducers = await getConnectedProducersP();
+
+    const {producerId} = await createChooseActivatedProducerPromptP(allProducers, connectedProducers);
+
+    return startProducerP(producerId);
 }
 
 async function withdrawPromptP() {
